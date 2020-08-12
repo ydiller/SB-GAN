@@ -66,7 +66,7 @@ class Pix2pixDataset(BaseDataset):
         if self.opt.from_disp:
             label = label.convert('RGB')
             transform_label = get_transform(self.opt, params, img_id=im_id)
-            label_tensor = transform_label(label) * 255.0
+            label_tensor = transform_label(label) #* 255.0
             #label_tensor[label_tensor == 255] = self.opt.disp_nc  # 'unknown' is opt.label_nc
         else:
             transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False, img_id=im_id)
