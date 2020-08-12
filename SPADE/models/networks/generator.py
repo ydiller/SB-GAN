@@ -86,11 +86,15 @@ class SPADEGenerator(BaseNetwork):
                                 dtype=torch.float32, device=input.get_device())
             x = self.fc(z)
             x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
-        else:
-            # we downsample segmap and run convolution
-            x = F.interpolate(seg, size=(self.sh, self.sw))
-            x = self.fc(x)
-            #print('disp img size after fc: ', x.shape)
+        else:            
+            if self.opt.from_disp:
+                x = self.fc(seg)
+                x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
+            else:
+                # we downsample segmap and run convolution
+                x = F.interpolate(seg, size=(self.sh, self.sw))
+                x = self.fc(x)
+                #print('disp img size after fc: ', x.shape)
 
         x = self.head_0(x, seg.detach())
 
