@@ -33,8 +33,8 @@ class SPADEGenerator(BaseNetwork):
             # In case of VAE, we will sample from random z vector
             self.fc = nn.Linear(opt.z_dim, 16 * nf * self.sw * self.sh)
         elif opt.from_disp:
-            self.fc = nn.Conv2d(opt.disp_nc, 16 * nf, 3, padding=1)
-            #self.fc = nn.Linear(opt.crop_size, 16 * nf * self.sw * self.sh)
+            #self.fc = nn.Conv2d(opt.disp_nc, 16 * nf, 3, padding=1)
+            self.fc = nn.Linear(int((opt.crop_size)/4), 16 * nf * self.sw * self.sh)
         else:
             # Otherwise, we make the network deterministic by starting with
             # downsampled segmentation map instead of random z
@@ -90,7 +90,7 @@ class SPADEGenerator(BaseNetwork):
             if self.opt.from_disp:
                 x = F.interpolate(seg, size=(int((seg.size(2))/4), int((seg.size(3))/4)))
                 x = self.fc(x)
-                #x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
+                x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
             else:
                 # we downsample segmap and run convolution
                 x = F.interpolate(seg, size=(self.sh, self.sw))
