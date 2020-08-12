@@ -1,0 +1,8 @@
+checkpoints/
+weights/
+results/
+.idea/
+*.tar.gz
+*.zip
+*.pkl
+*.pyc
