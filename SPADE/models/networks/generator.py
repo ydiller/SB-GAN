@@ -88,7 +88,7 @@ class SPADEGenerator(BaseNetwork):
         else:
             # we downsample segmap and run convolution
             #x = F.interpolate(seg, size=(self.sh, self.sw))
-            x = self.fc(x)
+            x = self.fc(seg)
             #print('disp img size after fc: ', x.shape)
 
         x = self.head_0(x, seg.detach())
