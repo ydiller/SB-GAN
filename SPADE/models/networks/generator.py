@@ -88,7 +88,8 @@ class SPADEGenerator(BaseNetwork):
             x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
         else:            
             if self.opt.from_disp:
-                x = F.interpolate(seg, size=(int((seg.size(2))/16), int((seg.size(3))/16)))
+                #x = F.interpolate(seg, size=(int((seg.size(2))/16), int((seg.size(3))/16)))
+                x = F.interpolate(seg, size=(self.sh, self.sw))
                 x = self.fc(x)
                 #x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
             else:
