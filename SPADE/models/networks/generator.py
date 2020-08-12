@@ -88,6 +88,7 @@ class SPADEGenerator(BaseNetwork):
             x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
         else:            
             if self.opt.from_disp:
+                print(seg.shape)
                 x = self.fc(seg)
                 x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
             else:
