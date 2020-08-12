@@ -80,7 +80,8 @@ class Pix2pixDataset(BaseDataset):
                 "The label_path %s and image_path %s don't match." % \
                 (label_path, image_path)
         image = Image.open(image_path)
-        image = image.convert('RGB')
+        if not self.opt.from_disp:
+            image = image.convert('RGB')
 
         transform_image = get_transform(self.opt, params, img_id=im_id)
         image_tensor = transform_image(image)
