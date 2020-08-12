@@ -90,7 +90,7 @@ class SPADEGenerator(BaseNetwork):
             print('disp img size before interpolate: ', seg.shape)
             x = F.interpolate(seg, size=(self.sh, self.sw))
             print('disp img size after interpolate: ', x.shape)
-            x = self.fc(x.cuda())
+            x = self.fc(x)
 
         x = self.head_0(x, seg.detach())
 
