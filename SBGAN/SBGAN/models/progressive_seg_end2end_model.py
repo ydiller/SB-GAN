@@ -68,6 +68,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
             g_loss, fake_semantics = self.compute_end2end_generator_loss( im_mc, im, z, iteration, global_iteration, dim_ind, 
                                 scaling, interpolate, hard=True)
             
+            print('got to end2end model2')
             return g_loss, fake_semantics
         if mode == 'discriminator_end2end':
             d_loss = self.compute_end2end_discriminator_loss(im_mc, im_seg, im, z ,iteration, global_iteration,dim_ind,
