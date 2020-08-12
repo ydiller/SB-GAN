@@ -34,7 +34,7 @@ class SPADEGenerator(BaseNetwork):
             self.fc = nn.Linear(opt.z_dim, 16 * nf * self.sw * self.sh)
         elif opt.from_disp:
             #self.fc = nn.Conv2d(opt.disp_nc, 16 * nf, 3, padding=1)
-            self.fc = nn.Linear(int((opt.crop_size)/4), 16 * nf * self.sw * self.sh)
+            self.fc = nn.Linear(int((opt.crop_size)/8), 16 * nf * self.sw * self.sh)
         else:
             # Otherwise, we make the network deterministic by starting with
             # downsampled segmentation map instead of random z
@@ -88,7 +88,7 @@ class SPADEGenerator(BaseNetwork):
             x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
         else:            
             if self.opt.from_disp:
-                x = F.interpolate(seg, size=(int((seg.size(2))/4), int((seg.size(3))/4)))
+                x = F.interpolate(seg, size=(int((seg.size(2))/8), int((seg.size(3))/8)))
                 x = self.fc(x)
                 x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
             else:
