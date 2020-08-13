@@ -135,18 +135,22 @@ class Pix2PixModel(torch.nn.Module):
             data['fake_label'] = None
 
 
-        if not one_hot and not self.opt.from_disp:
+        if not one_hot:
             # create one-hot label map
             label_map = data['label']
             bs, _, h, w = label_map.size()
-            if self.opt.from_disp:
-                nc = self.opt.disp_nc + 1 if self.opt.contain_dontcare_label \
-                    else self.opt.disp_nc
-            else:
-                nc = self.opt.label_nc + 1 if self.opt.contain_dontcare_label \
-                    else self.opt.label_nc
+            #if self.opt.from_disp:
+                #nc = self.opt.disp_nc + 1 if self.opt.contain_dontcare_label \
+                    #else self.opt.disp_nc
+            #else:
+            nc = self.opt.label_nc + 1 if self.opt.contain_dontcare_label \
+                else self.opt.label_nc
             input_label = self.FloatTensor(bs, nc, h, w).zero_()
             input_semantics = input_label.scatter_(1, label_map, 1.0)
+            disp_map = data['disp']
+            
+            if self.opt.from_disp:
+                input_semantics = torch.cat((input_semantics, disp_map), dim=1)
 
             # concatenate instance map if it exists
             if not self.opt.no_instance:
@@ -156,7 +160,7 @@ class Pix2PixModel(torch.nn.Module):
 
             return input_semantics, data['image'], data['fake_label']
         else:
-            return data['label'], data['image'], data['fake_label']
+            return input_semantics, data['image'], data['fake_label']
 
     def compute_generator_loss(self, input_semantics, real_image):
         G_losses = {}
