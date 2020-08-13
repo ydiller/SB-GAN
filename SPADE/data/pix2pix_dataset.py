@@ -19,15 +19,17 @@ class Pix2pixDataset(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
 
-        label_paths, image_paths, instance_paths = self.get_paths(opt)
+        label_paths, image_paths, disp_paths, instance_paths = self.get_paths(opt)
         if not opt.not_sort:
             util.natural_sort(label_paths)
             util.natural_sort(image_paths)
+            util.natural_sort(disp_paths)
             if not opt.no_instance:
                 util.natural_sort(instance_paths)
 
         label_paths = label_paths[:opt.max_dataset_size]
         image_paths = image_paths[:opt.max_dataset_size]
+        disp_paths = disp_paths[:opt.max_dataset_size]
         instance_paths = instance_paths[:opt.max_dataset_size]
 
         if not opt.no_pairing_check:
@@ -37,6 +39,7 @@ class Pix2pixDataset(BaseDataset):
 
         self.label_paths = label_paths
         self.image_paths = image_paths
+        self.disp_paths = disp_paths
         self.instance_paths = instance_paths
 
         size = len(self.label_paths)
@@ -45,9 +48,10 @@ class Pix2pixDataset(BaseDataset):
     def get_paths(self, opt):
         label_paths = []
         image_paths = []
+        disp_paths = []
         instance_paths = []
         assert False, "A subclass of Pix2pixDataset must override self.get_paths(self, opt)"
-        return label_paths, image_paths, instance_paths
+        return label_paths, image_paths, disp_paths, instance_paths
 
     def paths_match(self, path1, path2):
         filename1_without_ext = os.path.splitext(os.path.basename(path1))[0]
@@ -57,17 +61,21 @@ class Pix2pixDataset(BaseDataset):
     def __getitem__(self, index):
         # Label Image
         label_path = self.label_paths[index].split(' ')[0]
+        disp_path = self.disp_paths[index].split(' ')[0]
         if len(self.label_paths[index].split(' '))>1:
             im_id = int(self.label_paths[index].split(' ')[1])
         else:
             im_id = 0
         label = Image.open(label_path)
+        disp = Image.open(disp_path)
         params = get_params(self.opt, label.size)
         if self.opt.from_disp:
-            label = label.convert('RGB')
-            transform_label = get_transform(self.opt, params, img_id=im_id)
-            label_tensor = transform_label(label) #* 255.0
-            #label_tensor[label_tensor == 255] = self.opt.disp_nc  # 'unknown' is opt.label_nc
+            #disp = disp.convert('RGB')
+            transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False, img_id=im_id)
+            label_tensor = transform_label(label) * 255.0
+            label_tensor[label_tensor == 255] = self.opt.label_nc  # 'unknown' is opt.label_nc
+            transform_disp = get_transform(self.opt, params, img_id=im_id, disptrans = True)
+            disp_tensor = transform_disp(disp) #* 255.0
         else:
             transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False, img_id=im_id)
             label_tensor = transform_label(label) * 255.0
@@ -100,6 +108,7 @@ class Pix2pixDataset(BaseDataset):
 
         input_dict = {'label': label_tensor,
                       'instance': instance_tensor,
+                      'disp': disp_tensor,
                       'image': image_tensor,
                       'path': image_path,
                       }
