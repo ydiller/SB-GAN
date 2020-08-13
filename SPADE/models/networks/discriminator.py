@@ -101,7 +101,7 @@ class NLayerDiscriminator(BaseNetwork):
     def compute_D_input_nc(self, opt, conditional=True):
         if conditional:
             if opt.from_disp:
-                input_nc = opt.disp_nc + opt.output_nc
+                input_nc = opt.disp_nc + opt.label_nc + opt.output_nc
             else:
                 input_nc = opt.label_nc + opt.output_nc
             print('output_nc: ',opt.output_nc)
