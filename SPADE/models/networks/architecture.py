@@ -39,6 +39,7 @@ class SPADEResnetBlock(nn.Module):
                 self.conv_s = spectral_norm(self.conv_s)
 
         # define normalization layers
+        """
         if opt.from_disp:
             spade_config_str = opt.norm_G.replace('spectral', '')
             self.norm_0 = SPADE(spade_config_str, fin, opt.disp_nc, opt)
@@ -46,11 +47,12 @@ class SPADEResnetBlock(nn.Module):
             if self.learned_shortcut:
                 self.norm_s = SPADE(spade_config_str, fin, opt.disp_nc, opt)
         else:
-            spade_config_str = opt.norm_G.replace('spectral', '')
-            self.norm_0 = SPADE(spade_config_str, fin, opt.semantic_nc, opt)
-            self.norm_1 = SPADE(spade_config_str, fmiddle, opt.semantic_nc, opt)
-            if self.learned_shortcut:
-                self.norm_s = SPADE(spade_config_str, fin, opt.semantic_nc, opt)
+        """
+        spade_config_str = opt.norm_G.replace('spectral', '')
+        self.norm_0 = SPADE(spade_config_str, fin, opt.semantic_nc, opt)
+        self.norm_1 = SPADE(spade_config_str, fmiddle, opt.semantic_nc, opt)
+        if self.learned_shortcut:
+            self.norm_s = SPADE(spade_config_str, fin, opt.semantic_nc, opt)
 
     # note the resnet block with SPADE also takes in |seg|,
     # the semantic segmentation map as input
