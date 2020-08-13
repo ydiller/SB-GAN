@@ -90,10 +90,10 @@ class SPADEGenerator(BaseNetwork):
         else:            
             if self.opt.from_disp:
                 #x = F.interpolate(seg, size=(int((seg.size(2))/16), int((seg.size(3))/16)))
-                print('disp img size before interpolate: ', seg.shape)
+                #print('disp img size before interpolate: ', seg.shape)
                 x = F.interpolate(seg, size=(self.sh, self.sw))
                 x = self.fc(x)
-                print('disp img size after fc: ', x.shape)
+                #print('disp img size after fc: ', x.shape)
                 #x = x.view(-1, 16 * self.opt.ngf, self.sh, self.sw)
             else:
                 # we downsample segmap and run convolution
