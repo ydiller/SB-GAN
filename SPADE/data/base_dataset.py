@@ -79,7 +79,8 @@ def get_transform(opt, params, method=Image.BICUBIC, normalize=True, toTensor=Tr
 
     if normalize:
         if disptrans:
-            transform_list += [transforms.Normalize(0.5,0.5)]
+            transform_list += [transforms.Normalize((0.5, 0.5, 0.5, 0.5),
+                                                   (0.5, 0.5, 0.5, 0.5))]
         else: 
             transform_list += [transforms.Normalize((0.5, 0.5, 0.5),
                                                    (0.5, 0.5, 0.5))]
@@ -90,7 +91,7 @@ def normalize():
     print('get to normalize func')
     disptrans = False
     if disptrans:
-        return transforms.Normalize(0.5,0.5)
+        return transforms.Normalize((0.5, 0.5, 0.5, 0.5),(0.5, 0.5, 0.5, 0.5))
     else: 
         return transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 
