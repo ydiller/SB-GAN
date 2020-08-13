@@ -78,8 +78,8 @@ class SPADEGenerator(BaseNetwork):
 
     def forward(self, input, z=None):
         seg = input
-        import ipdb
-        ipdb.set_trace()
+        #import ipdb
+        #ipdb.set_trace()
         if self.opt.use_vae:
             # we sample z from unit normal and reshape the tensor
             if z is None:
