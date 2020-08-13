@@ -123,7 +123,7 @@ class Pix2PixModel(torch.nn.Module):
 
     def preprocess_input(self, data, one_hot=False, end2end=False):
         # move to GPU and change data types
-        if not one_hot and not self.opt.from_disp:
+        if not one_hot:
             data['label'] = data['label'].long()
         if self.use_gpu():
             data['label'] = data['label'].cuda()
