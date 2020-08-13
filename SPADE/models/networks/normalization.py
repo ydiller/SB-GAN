@@ -89,7 +89,6 @@ class SPADE(nn.Module):
         pw = ks // 2
         if opt.from_disp:
             label_nc = opt.disp_nc + label_nc
-            print('mlp_shared #channels: ', label_nc)
         self.mlp_shared = nn.Sequential(
             nn.Conv2d(label_nc, nhidden, kernel_size=ks, padding=pw),
             nn.ReLU()
