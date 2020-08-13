@@ -131,7 +131,7 @@ class Visualizer():
             tile = self.opt.batchSize > 8
             if 'input_label' == key:
                 if self.opt.from_disp:
-                    t = util.tensor2label(t, self.opt.disp_nc + 2, tile=tile)
+                    t = util.tensor2label(t, self.opt.disp_nc + self.opt.label_nc + 2, tile=tile)
                 else:
                     t = util.tensor2label(t, self.opt.label_nc + 2, tile=tile)
             else:
