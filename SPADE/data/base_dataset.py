@@ -44,7 +44,7 @@ def get_params(opt, size):
     return {'crop_pos': (x, y), 'flip': flip}
 
 
-def get_transform(opt, params, method=Image.BICUBIC, normalize=True, toTensor=True, img_id=1):
+def get_transform(opt, params, method=Image.BICUBIC, normalize=True, toTensor=True, img_id=1, disptrans = False):
     transform_list = []
     if 'fixed_crop_resize' == opt.preprocess_mode:
         transform_list.append(transforms.Lambda(lambda img: __fixed_crop(img, img_id, (256,0), (1536, 768))))
@@ -78,13 +78,21 @@ def get_transform(opt, params, method=Image.BICUBIC, normalize=True, toTensor=Tr
         transform_list += [transforms.ToTensor()]
 
     if normalize:
-        transform_list += [transforms.Normalize((0.5, 0.5, 0.5),
-                                                (0.5, 0.5, 0.5))]
+        if disptrans:
+            transform_list += [transforms.Normalize(0.5,0.5)]
+        else: 
+            transform_list += [transforms.Normalize((0.5, 0.5, 0.5),
+                                                   (0.5, 0.5, 0.5))]
     return transforms.Compose(transform_list)
 
 
 def normalize():
-    return transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    print('get to normalize func')
+    disptrans = False
+    if disptrans:
+        return transforms.Normalize(0.5,0.5)
+    else: 
+        return transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 
 
 def __resize(img, w, h, method=Image.BICUBIC):
