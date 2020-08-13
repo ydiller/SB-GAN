@@ -38,8 +38,12 @@ class CityscapesDataset(Pix2pixDataset):
         
             
         else:
-            label_dir = os.path.join(root, 'disparity', phase)
-            label_paths = make_dataset(label_dir, recursive=True)
+            label_dir = os.path.join(root, 'gtFine', phase)
+            label_paths_all = make_dataset(label_dir, recursive=True)
+            label_paths = [p for p in label_paths_all if p.endswith('_labelIds.png')]
+            
+            disp_dir = os.path.join(root, 'disparity', phase)
+            disp_paths = make_dataset(disp_dir, recursive=True)
     
             image_dir = os.path.join(root, 'leftImg8bit', phase)
             image_paths = make_dataset(image_dir, recursive=True)
@@ -51,7 +55,7 @@ class CityscapesDataset(Pix2pixDataset):
             instance_paths = []
 
 
-        return label_paths, image_paths, instance_paths
+        return label_paths, image_paths, disp_paths, instance_paths
 
     def paths_match(self, path1, path2):
         name1 = os.path.basename(path1)
