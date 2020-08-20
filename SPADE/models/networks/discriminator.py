@@ -32,13 +32,13 @@ class MultiscaleDiscriminator(BaseNetwork):
         self.opt = opt
 
         for i in range(opt.num_D):
-            subnetD = self.create_single_discriminator(opt, conditional, triple)
+            subnetD = self.create_single_discriminator(opt, conditional, triple=triple)
             self.add_module('discriminator_%d' % i, subnetD)
 
     def create_single_discriminator(self, opt, conditional=True, triple=False):
         subarch = opt.netD_subarch
         if subarch == 'n_layer':
-            netD = NLayerDiscriminator(opt, conditional, triple)
+            netD = NLayerDiscriminator(opt, conditional, triple=triple)
         else:
             raise ValueError('unrecognized discriminator subarchitecture %s' % subarch)
         return netD
@@ -78,7 +78,7 @@ class NLayerDiscriminator(BaseNetwork):
         kw = 4
         padw = int(np.ceil((kw - 1.0) / 2))
         nf = opt.ndf
-        input_nc = self.compute_D_input_nc(opt, conditional, triple)
+        input_nc = self.compute_D_input_nc(opt, conditional, triple=triple)
 
         norm_layer = get_nonspade_norm_layer(opt, opt.norm_D)
         sequence = [[nn.Conv2d(input_nc, nf, kernel_size=kw, stride=2, padding=padw),
