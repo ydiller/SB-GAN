@@ -93,11 +93,11 @@ class Pix2PixModel(torch.nn.Module):
         else:
             return optimizer_G, None
 
-    def save(self, epoch):
-        util.save_network(self.netG, 'G', epoch, self.opt)
-        util.save_network(self.netD, 'D', epoch, self.opt)
+    def save(self, epoch, triple=False):
+        util.save_network(self.netG, 'G', epoch, self.opt, triple)
+        util.save_network(self.netD, 'D', epoch, self.opt, triple)
         if self.opt.use_vae:
-            util.save_network(self.netE, 'E', epoch, self.opt)
+            util.save_network(self.netE, 'E', epoch, self.opt, triple)
 
     ############################################################################
     # Private helper methods
@@ -224,7 +224,7 @@ class Pix2PixModel(torch.nn.Module):
         z = self.reparameterize(mu, logvar)
         return z, mu, logvar
 
-    def generate_fake(self, input_semantics, real_image=torch.tensor([]), compute_kld_loss=False):
+    def generate_fake(self, input_semantics, real_image=torch.tensor([]), compute_kld_loss=False, triple=False):
         z = None
         KLD_loss = None
         if self.opt.use_vae:
@@ -232,7 +232,7 @@ class Pix2PixModel(torch.nn.Module):
             if compute_kld_loss:
                 KLD_loss = self.KLDLoss(mu, logvar) * self.opt.lambda_kld
 
-        fake_image = self.netG(input_semantics, z=z)
+        fake_image = self.netG(input_semantics, z=z, triple)
 
         assert (not compute_kld_loss) or self.opt.use_vae, \
             "You cannot compute KLD loss if opt.use_vae == False"
