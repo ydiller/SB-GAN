@@ -22,7 +22,7 @@ class SPADEGenerator(BaseNetwork):
 
         return parser
 
-    def __init__(self, opt):
+    def __init__(self, opt, triple=False):
         super().__init__()
         self.opt = opt
         nf = opt.ngf
@@ -32,7 +32,7 @@ class SPADEGenerator(BaseNetwork):
         if opt.use_vae:
             # In case of VAE, we will sample from random z vector
             self.fc = nn.Linear(opt.z_dim, 16 * nf * self.sw * self.sh)
-        elif opt.from_disp:
+        elif opt.from_disp or triple:
             self.fc = nn.Conv2d(opt.disp_nc+self.opt.semantic_nc, 16 * nf, 3, padding=1)
             #self.fc = nn.Linear(int((opt.crop_size)/16), 16 * nf * self.sw * self.sh)
         else:
