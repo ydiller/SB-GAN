@@ -27,18 +27,18 @@ class MultiscaleDiscriminator(BaseNetwork):
 
         return parser
 
-    def __init__(self, opt, conditional=True):
+    def __init__(self, opt, conditional=True, triple=False):
         super().__init__()
         self.opt = opt
 
         for i in range(opt.num_D):
-            subnetD = self.create_single_discriminator(opt, conditional)
+            subnetD = self.create_single_discriminator(opt, conditional, triple)
             self.add_module('discriminator_%d' % i, subnetD)
 
-    def create_single_discriminator(self, opt, conditional=True):
+    def create_single_discriminator(self, opt, conditional=True, triple=False):
         subarch = opt.netD_subarch
         if subarch == 'n_layer':
-            netD = NLayerDiscriminator(opt, conditional)
+            netD = NLayerDiscriminator(opt, conditional, triple)
         else:
             raise ValueError('unrecognized discriminator subarchitecture %s' % subarch)
         return netD
@@ -71,14 +71,14 @@ class NLayerDiscriminator(BaseNetwork):
                             help='# layers in each discriminator')
         return parser
 
-    def __init__(self, opt, conditional=True):
+    def __init__(self, opt, conditional=True, triple=False):
         super().__init__()
         self.opt = opt
 
         kw = 4
         padw = int(np.ceil((kw - 1.0) / 2))
         nf = opt.ndf
-        input_nc = self.compute_D_input_nc(opt, conditional)
+        input_nc = self.compute_D_input_nc(opt, conditional, triple)
 
         norm_layer = get_nonspade_norm_layer(opt, opt.norm_D)
         sequence = [[nn.Conv2d(input_nc, nf, kernel_size=kw, stride=2, padding=padw),
@@ -98,9 +98,9 @@ class NLayerDiscriminator(BaseNetwork):
         for n in range(len(sequence)):
             self.add_module('model' + str(n), nn.Sequential(*sequence[n]))
 
-    def compute_D_input_nc(self, opt, conditional=True):
+    def compute_D_input_nc(self, opt, conditional=True, triple=False):
         if conditional:
-            if opt.from_disp:
+            if opt.from_disp or triple:
                 input_nc = opt.disp_nc + opt.label_nc + opt.output_nc
             else:
                 input_nc = opt.label_nc + opt.output_nc
@@ -111,10 +111,8 @@ class NLayerDiscriminator(BaseNetwork):
 
         if opt.contain_dontcare_label and conditional:
             input_nc += 1
-            print('frenk')
         if not opt.no_instance:
             input_nc += 1
-            print('hi')
         #input_nc += 2
         return input_nc
 
