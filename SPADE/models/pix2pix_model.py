@@ -14,15 +14,17 @@ class Pix2PixModel(torch.nn.Module):
         networks.modify_commandline_options(parser, is_train)
         return parser
 
-    def __init__(self, opt, end2end=False):
+    def __init__(self, opt, end2end=False, triple=False):
         super().__init__()
         self.opt = opt
         self.FloatTensor = torch.cuda.FloatTensor if self.use_gpu() \
             else torch.FloatTensor
         self.ByteTensor = torch.cuda.ByteTensor if self.use_gpu() \
             else torch.ByteTensor
-        self.netG, self.netD, self.netE = self.initialize_networks(opt, end2end)
-
+        if opt.end2endtri:
+            self.netG, self.netD, self.netE, self.netG_1, self.netD_1 = self.initialize_networks(opt, end2end, triple=triple)
+        if not opt.end2endtri:
+            self.netG, self.netD, self.netE, _, _ = self.initialize_networks(opt, end2end)
         # set loss functions
         if opt.isTrain:
             self.criterionGAN = networks.GANLoss(
@@ -103,19 +105,29 @@ class Pix2PixModel(torch.nn.Module):
     # Private helper methods
     ############################################################################
 
-    def initialize_networks(self, opt, end2end=False):
+    def initialize_networks(self, opt, end2end=False, triple=False):
+        if opt.end2endtri:
+            netG_1 = networks.define_G(opt, triple)
+            netD_1 = networks.define_D(opt, triple)
         netG = networks.define_G(opt)
         netD = networks.define_D(opt) if opt.isTrain else None
         netE = networks.define_E(opt) if opt.use_vae else None
 
         if not opt.isTrain or opt.continue_train:
+            if opt.end2endtri:
+                netG_1 = util.load_network(netG_1, 'G', opt.which_epoch, opt, triple)
             netG = util.load_network(netG, 'G', opt.which_epoch, opt)
             if opt.isTrain:# and end2end:
                 netD = util.load_network(netD, 'D', opt.which_epoch, opt)
+                if opt.end2endtri:
+                    netD_1 = util.load_network(netD_1, 'D', opt.which_epoch, opt, triple)
             if opt.use_vae:
                 netE = util.load_network(netE, 'E', opt.which_epoch, opt)
+        if not opt.end2endtri:
+            netG_1 = None
+            netD_1 = None
 
-        return netG, netD, netE
+        return netG, netD, netE, netG_1, netD_1
 
     # preprocess the input, such as moving the tensors to GPUs and
     # transforming the label map to one-hot encoding
@@ -167,16 +179,16 @@ class Pix2PixModel(torch.nn.Module):
         else:
             return data['label'], data['image'], data['fake_label']
 
-    def compute_generator_loss(self, input_semantics, real_image):
+    def compute_generator_loss(self, input_semantics, real_image, triple=False):
         G_losses = {}
         fake_image, KLD_loss = self.generate_fake(
-            input_semantics, real_image, compute_kld_loss=self.opt.use_vae)
+            input_semantics, real_image, compute_kld_loss=self.opt.use_vae, triple=triple)
 
         if self.opt.use_vae:
             G_losses['KLD'] = KLD_loss
 
         pred_fake, pred_real = self.discriminate(
-            input_semantics, fake_image, real_image)
+            input_semantics, fake_image, real_image, triple=triple)
 
         G_losses['GAN'] = self.criterionGAN(pred_fake, True,
                                             for_discriminator=False)
@@ -199,15 +211,15 @@ class Pix2PixModel(torch.nn.Module):
 
         return G_losses, fake_image
 
-    def compute_discriminator_loss(self, input_semantics, real_image):
+    def compute_discriminator_loss(self, input_semantics, real_image, triple=False):
         D_losses = {}
         with torch.no_grad():
-            fake_image, _ = self.generate_fake(input_semantics, real_image)
+            fake_image, _ = self.generate_fake(input_semantics, real_image, triple=triple)
             fake_image = fake_image.detach()
             fake_image.requires_grad_()
 
         pred_fake, pred_real = self.discriminate(
-            input_semantics, fake_image, real_image)
+            input_semantics, fake_image, real_image, triple=triple)
 
         D_losses['D_Fake'] = self.criterionGAN(pred_fake, False,
                                                for_discriminator=True)
@@ -232,8 +244,11 @@ class Pix2PixModel(torch.nn.Module):
             if compute_kld_loss:
                 KLD_loss = self.KLDLoss(mu, logvar) * self.opt.lambda_kld
 
-        fake_image = self.netG(input_semantics, z=z, triple)
-
+        if triple:
+            fake_image = self.netG_1(input_semantics, z=z)
+        else:
+            fake_image = self.netG(input_semantics, z=z)
+            
         assert (not compute_kld_loss) or self.opt.use_vae, \
             "You cannot compute KLD loss if opt.use_vae == False"
 
@@ -262,7 +277,7 @@ class Pix2PixModel(torch.nn.Module):
     # Given fake and real image, return the prediction of discriminator
     # for each fake and real image.
 
-    def discriminate(self, input_semantics, fake_image, real_image):
+    def discriminate(self, input_semantics, fake_image, real_image, triple=False):
         fake_concat = torch.cat([input_semantics, fake_image], dim=1)
         real_concat = torch.cat([input_semantics, real_image], dim=1)
 
@@ -272,7 +287,10 @@ class Pix2PixModel(torch.nn.Module):
         # So both fake and real images are fed to D all at once.
         fake_and_real = torch.cat([fake_concat, real_concat], dim=0)
 
-        discriminator_out = self.netD(fake_and_real)
+        if triple:
+            discriminator_out = self.netD_1(fake_and_real)
+        else:
+            discriminator_out = self.netD(fake_and_real)
 
         pred_fake, pred_real = self.divide_pred(discriminator_out)
 
