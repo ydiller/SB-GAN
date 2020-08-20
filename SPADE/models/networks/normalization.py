@@ -65,7 +65,7 @@ def get_nonspade_norm_layer(opt, norm_type='instance'):
 # |norm_nc|: the #channels of the normalized activations, hence the output dim of SPADE
 # |label_nc|: the #channels of the input semantic map, hence the input dim of SPADE
 class SPADE(nn.Module):
-    def __init__(self, config_text, norm_nc, label_nc, opt):
+    def __init__(self, config_text, norm_nc, label_nc, opt, triple=False):
         super().__init__()
 
         assert config_text.startswith('spade')
@@ -87,7 +87,7 @@ class SPADE(nn.Module):
         nhidden = 128
 
         pw = ks // 2
-        if opt.from_disp:
+        if opt.from_disp or triple:
             label_nc = opt.disp_nc + label_nc
         self.mlp_shared = nn.Sequential(
             nn.Conv2d(label_nc, nhidden, kernel_size=ks, padding=pw),
