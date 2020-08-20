@@ -40,12 +40,12 @@ class SupDataset(BaseDataset):
         if opt.dataset=='cityscapes' or opt.dataset=='cityscapes_full_weighted' or opt.dataset=='ade_indoor':
             inpath = 'datasets/%s'%opt.dataset
             if train:
-                self.datalist_im = "%s_dis_info_train.txt"%inpath
-                #self.datalist_im = "%s_im_info_train.txt"%inpath
+                self.datalist_disp = "%s_dis_info_train.txt"%inpath
+                self.datalist_im = "%s_im_info_train.txt"%inpath
                 self.datalist_lbl = "%s_lbl_info_train.txt"%inpath
             else:
-                self.datalist_im = "%s_dis_info_val.txt"%inpath
-                #self.datalist_im = "%s_im_info_val.txt"%inpath
+                self.datalist_disp = "%s_dis_info_val.txt"%inpath
+                self.datalist_im = "%s_im_info_val.txt"%inpath
                 self.datalist_lbl = "%s_lbl_info_val.txt"%inpath
 
             with open(self.datalist_im) as f:
@@ -53,13 +53,17 @@ class SupDataset(BaseDataset):
                 self.info_im = (f.readlines())
             with open(self.datalist_lbl) as f:
                 self.info_lbl = (f.readlines())
+            with open(self.datalist_disp) as f:
+                self.info_disp = (f.readlines())
             
             if not opt.not_sort:
                 self.info_im = sorted(self.info_im)
                 self.info_lbl = sorted(self.info_lbl)
+                self.info_disp = sorted(self.info_disp)
 
             self.X_paths_im = [x.strip().split(' ')[0] for x in self.info_im]
             self.X_paths_lbl = [x.strip().split(' ')[0] for x in self.info_lbl]
+            self.X_paths_disp = [x.strip().split(' ')[0] for x in self.info_disp]
 
             self.Ys = [int(x.strip().split(' ')[1]) for x in self.info_im]
             print("number of images:", len(self.Ys))
@@ -69,14 +73,17 @@ class SupDataset(BaseDataset):
                 randinds = range(len(self.Ys))
             self.X_paths_im = [self.X_paths_im[i] for i in randinds]
             self.X_paths_lbl = [self.X_paths_lbl[i] for i in randinds]
+            self.X_paths_disp = [self.X_paths_disp[i] for i in randinds]
             self.Ys = [int(self.Ys[i]) for i in randinds]
         else:
             self.X_paths_im = []
             self.X_paths_lbl = []
+            self.X_paths_disp = []
             # self.Ys = []
         #self.transform_im = None
         self.transform_im = transform_im
         self.transform_lbl = transform_lbl
+        self.transform_disp = transform_im
         self.dataset_name = opt.dataset
         self.opt = opt
     def __getitem__(self, index):
@@ -84,25 +91,33 @@ class SupDataset(BaseDataset):
 
         transform_im = self.transform_im.copy()
         transform_lbl = self.transform_lbl.copy()
+        transform_disp = self.transform_disp.copy()
         flip = random.random() > 0.5
         if not flip:
             if 'cityscapes' in self.opt.dataset:
                 del transform_im[1]
                 del transform_lbl[1]
+                del transform_disp[1]
             else:
                 del transform_im[1]
                 del transform_lbl[1]
+                del transform_disp[1]
 
 
         transform_im = transforms.Compose(transform_im)
         transform_lbl = transforms.Compose(transform_lbl)
+        transform_disp = transforms.Compose(transform_disp)
 
         X_path_im = self.X_paths_im[index]
         X_path_lbl = self.X_paths_lbl[index]
+        X_path_disp = self.X_paths_disp[index]
         Y = self.Ys[index]
         
         X_im = misc.imread(X_path_im)
         X_im = PIL.Image.fromarray(X_im.astype('uint8'))
+        
+        X_disp = misc.imread(X_path_disp)
+        X_disp = PIL.Image.fromarray(X_disp.astype('uint8'))
 
         X_lbl = PIL.Image.open(X_path_lbl)
         if 'weighted' in self.dataset_name:
@@ -118,6 +133,13 @@ class SupDataset(BaseDataset):
             elif X_lbl.size[0] < X_im.size[0] or X_lbl.size[1] < X_im.size[1]:
                 t_presize = transforms.Resize(X_im.size[::-1], PIL.Image.NEAREST)
                 X_lbl = t_presize(X_lbl)
+            if X_lbl.size[0] > X_disp.size[0] or X_lbl.size[1] > X_disp.size[1]:
+                t_presize = transforms.Resize(X_lbl.size[::-1], PIL.Image.BILINEAR)
+                X_disp = t_presize(X_disp)
+            elif X_lbl.size[0] < X_disp.size[0] or X_lbl.size[1] < X_disp.size[1]:
+                t_presize = transforms.Resize(X_disp.size[::-1], PIL.Image.NEAREST)
+                X_lbl = t_presize(X_lbl)
+                X_im = t_presize(X_im)
 
             #crop both images with the same index
             size = (min(X_lbl.size), min(X_lbl.size))
@@ -149,14 +171,19 @@ class SupDataset(BaseDataset):
             X_im =transforms.functional.crop(X_im, j, i, size[0], size[1])
 
         X_im = X_im.convert('RGB')
+        X_disp = X_disp.convert('RGB')
         #transform_im = None
         if transform_im is not None:
             X_im = transform_im(X_im)
+        if transform_disp is not None:
+            X_disp = transform_disp(X_disp)
             
         X_im = np.asarray(X_im)
         X_im = torch.Tensor(X_im)
+        X_disp = np.asarray(X_disp)
+        X_disp = torch.Tensor(X_disp)
         Y = torch.Tensor(np.array([Y]))
-        return X_lbl, X_im, Y
+        return X_lbl, X_im, X_disp, Y
 
     def __len__(self):
         return len(self.X_paths_im)
