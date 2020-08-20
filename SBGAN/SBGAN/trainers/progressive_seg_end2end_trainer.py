@@ -46,10 +46,15 @@ class ProgressiveTrainer:
         else:
             self.end2end_model_on_one_gpu = self.end2end_model
         self.progressive_model = self.end2end_model_on_one_gpu.progressive_model
-        self.pix2pix_model = self.end2end_model_on_one_gpu.pix2pix_model 
+        self.pix2pix_model = self.end2end_model_on_one_gpu.pix2pix_model
+        if opt.end2endtri:
+          self.pix2pix_model2 = self.end2end_model_on_one_gpu.pix2pix_model2
 
         self.pix2pix_model.optimizer_G, self.pix2pix_model.optimizer_D = \
             self.pix2pix_model.create_optimizers(opt)
+        if opt.end2endtri:
+          self.pix2pix_model2.optimizer_G, self.pix2pix_model2.optimizer_D = \
+              self.pix2pix_model2.create_optimizers(opt)
         self.optimizer_D2 = self.end2end_model_on_one_gpu.create_optimizers()
         self.phase = "stabilize"
 
@@ -102,25 +107,25 @@ class ProgressiveTrainer:
 
     def next_batch(self):
         try:
-            X_seg, X_im, Y = next(self.loader_iter)
-            return X_seg, Y, X_im, Y
+            X_seg, X_im, X_disp, Y = next(self.loader_iter)
+            return X_seg, Y, X_im, Y, X_disp, Y
         except StopIteration:
             self.loader_iter = iter(self.loader_data)
-            X_seg, X_im, Y = next(self.loader_iter)
-            return X_seg, Y, X_im, Y
+            X_seg, X_im, X_disp, Y = next(self.loader_iter)
+            return X_seg, Y, X_im, Y, X_disp, Y
 
     def next_batch_eval(self):
         try:
-            X_seg, X_im, Y = next(self.loader_iter_eval)
-            return X_seg, Y, X_im, Y
+            X_seg, X_im, X_disp, Y = next(self.loader_iter_eval)
+            return X_seg, Y, X_im, Y, X_disp, Y
         except StopIteration:
             self.loader_iter_eval = iter(self.loader_data_eval)
-            X_seg, X_im, Y = next(self.loader_iter_eval)
-            return X_seg, Y, X_im, Y
+            X_seg, X_im, X_disp, Y = next(self.loader_iter_eval)
+            return X_seg, Y, X_im, Y, X_disp, Y
 
 
-    def call_next_batch(self, seg, im):
-        seg, _, im, _ = self.next_batch()
+    def call_next_batch(self, seg, im, disp):
+        seg, _, im, _, disp, _ = self.next_batch()
         seg= seg.cpu().numpy()
         if 'cityscapes' in self.opt.dataset and self.num_semantics==19:
             seg += 1
@@ -128,7 +133,7 @@ class ProgressiveTrainer:
         seg = torch.Tensor(seg).cuda()
         seg_mc = torch.FloatTensor(self.opt.batchSize, self.num_semantics, seg.size(2), seg.size(3)).zero_().cuda()
         seg_mc = seg_mc.scatter_(1,seg.long(),1.0)
-        return seg, seg_mc, im 
+        return seg, seg_mc, im, disp
 
     def step_discriminator(self, iteration, global_iteration, dim_ind,seg_mc,seg, im, scaling, phase):
         self.optimizer_D2.zero_grad()
@@ -150,13 +155,14 @@ class ProgressiveTrainer:
         return D_losses
 
 
-    def step_generator_end2end(self, iteration, global_iteration, dim_ind, seg_mc, seg, im, scaling, phase):
+    def step_generator_end2end(self, iteration, global_iteration, dim_ind, seg_mc, seg, im, disp, scaling, phase):
         self.progressive_model.opt_g.zero_grad()
         self.pix2pix_model.optimizer_G.zero_grad()
+        self.pix2pix_model2.optimizer_G.zero_grad()
 
 
         z = torch.randn(self.opt.batchSize, 512)
-        G_losses, fake_seg = self.end2end_model(iteration, global_iteration, dim_ind, z, seg_mc.cpu(), seg.cpu(), im.cpu(), 
+        G_losses, fake_seg = self.end2end_model(iteration, global_iteration, dim_ind, z, seg_mc.cpu(), seg.cpu(), im.cpu(), disp.cpu(),
                 scaling, interpolate=phase == "fade", mode='generator_end2end')
         
         if self.opt.update_progan:
@@ -199,17 +205,19 @@ class ProgressiveTrainer:
             self.progressive_model.opt_g.step()
         if self.opt.update_pix2pix or self.opt.update_pix2pix_w_D2:
             self.pix2pix_model.optimizer_G.step()
+            self.pix2pix_model2.optimizer_G.step()
 
         return G_losses
 
-    def step_discriminator_end2end(self, iteration, global_iteration, dim_ind, seg_mc, seg, im, scaling, phase):
+    def step_discriminator_end2end(self, iteration, global_iteration, dim_ind, seg_mc, seg, im, disp, scaling, phase):
 
         self.progressive_model.opt_d.zero_grad()
         self.pix2pix_model.optimizer_D.zero_grad()
+        self.pix2pix_model2.optimizer_D.zero_grad()
         self.optimizer_D2.zero_grad()
 
         z = torch.randn(self.opt.batchSize, 512)
-        D_losses = self.end2end_model(iteration, global_iteration,dim_ind, z, seg_mc.cpu(), seg.cpu(), im.cpu(),
+        D_losses = self.end2end_model(iteration, global_iteration,dim_ind, z, seg_mc.cpu(), seg.cpu(), im.cpu(), disp.cpu(),
                         scaling, interpolate=phase == "fade", mode='discriminator_end2end')
 
         if self.opt.update_progan:
@@ -250,6 +258,7 @@ class ProgressiveTrainer:
             self.optimizer_D2.step()
         if self.opt.update_pix2pix:
             self.pix2pix_model.optimizer_D.step()
+            self.pix2pix_model2.optimizer_D.step()
 
         return D_losses
 
@@ -267,9 +276,9 @@ class ProgressiveTrainer:
             num_epochs=1
             for epoch in range(num_epochs):
                 for iteration in range(training_steps):
-                    seg, _, im, _ = self.next_batch()
-                    seg, seg_mc, im = self.call_next_batch(seg,im)
-                    D_losses = self.step_discriminator( iteration, global_iteration, dim_ind, seg_mc, seg, im, scaling, phase)
+                    seg, _, im, _, disp, _ = self.next_batch()
+                    seg, seg_mc, im, disp = self.call_next_batch(seg,im,disp)
+                    D_losses = self.step_discriminator( iteration, global_iteration, dim_ind, seg_mc, seg, im, disp, scaling, phase)
 
                     global_iteration += 1
                     if (iteration + 1) % 10 == 0:
@@ -314,6 +323,10 @@ class ProgressiveTrainer:
                 if "BATCHNORM" in module.__class__.__name__.upper():
                     print(module.__class__.__name__)
                     module.eval()
+            for module in self.pix2pix_model2.modules():
+                if "BATCHNORM" in module.__class__.__name__.upper():
+                    print(module.__class__.__name__)
+                    module.eval()
 
 
         for epoch in range(self.opt.epochs):
@@ -322,6 +335,7 @@ class ProgressiveTrainer:
                 epoch == self.opt.epochs:
                 if not self.opt.BN_eval:
                     self.pix2pix_model.eval()
+                    self.pix2pix_model2.eval()
                 fid = self.compute_FID(global_iteration, z_fixed=z_fid, real_fake='fake') #real_fake='real'/fake
                 self.progressive_model.writer.add_scalar(
                         "fid_fake",
@@ -335,17 +349,18 @@ class ProgressiveTrainer:
 
                 if not self.opt.BN_eval:
                     self.pix2pix_model.train()
+                    self.pix2pix_model2.train()
 
             iter_counter.record_epoch_start(epoch)
             for iteration in np.arange(training_steps):
 
                 iter_counter.record_one_iteration()
-                seg, _, im, _ = self.next_batch()
-                seg, seg_mc, im = self.call_next_batch(seg,im)
+                seg, _, im, _, disp, _ = self.next_batch()
+                seg, seg_mc, im, disp = self.call_next_batch(seg,im,disp)
 
-                G_losses = self.step_generator_end2end(iteration, global_iteration, dim_ind, seg_mc, seg, im, scaling, phase)
+                G_losses = self.step_generator_end2end(iteration, global_iteration, dim_ind, seg_mc, seg, im, disp, scaling, phase)
 
-                D_losses = self.step_discriminator_end2end(iteration, global_iteration, dim_ind, seg_mc, seg, im, scaling, phase)
+                D_losses = self.step_discriminator_end2end(iteration, global_iteration, dim_ind, seg_mc, seg, im, disp, scaling, phase)
                 # print('disc', time.time()-t3)
                 global_iteration += 1
                 if (iteration + 1) % 100 == 0:
@@ -354,7 +369,7 @@ class ProgressiveTrainer:
                         if phase == "fade"
                         else None
                     )
-                    fake_seg, fake_im_f, fake_im_r = self.end2end_model(iteration, global_iteration, dim_ind, fixed_z, seg_mc.cpu(), seg.cpu(), im.cpu(), scaling, mode='inference')
+                    fake_seg, fake_im_f, fake_im_r = self.end2end_model(iteration, global_iteration, dim_ind, fixed_z, seg_mc.cpu(), seg.cpu(), im.cpu(), disp.cpu(), scaling, mode='inference')
                     grid = make_grid(fake_seg, nrow=4, normalize=True, range=(-1, 1))
                     self.progressive_model.writer.add_image("fake", grid, global_iteration)
 
@@ -369,6 +384,10 @@ class ProgressiveTrainer:
                     im = im.cpu()
                     grid = make_grid(im, nrow=4, normalize=True, range=(-1, 1))
                     self.progressive_model.writer.add_image("im_real", grid, global_iteration)
+                    
+                    disp = disp.cpu()
+                    grid = make_grid(disp, nrow=4, normalize=True, range=(-1, 1))
+                    self.progressive_model.writer.add_image("disp_real", grid, global_iteration)
 
                     seg = seg.cpu()
                     im_ = self.progressive_model.color_transfer(seg)
@@ -385,6 +404,7 @@ class ProgressiveTrainer:
             if epoch % self.opt.save_epoch_freq == 0 or epoch == self.opt.epochs:                
                 self.progressive_model.save_model(self.num_semantics, global_iteration, phase)
                 self.pix2pix_model.save(str(int(epoch+1)+int(self.opt.which_epoch)))
+                self.pix2pix_model2.save(str(int(epoch+1)+int(self.opt.which_epoch)), triple=True)
                 util.save_network(self.end2end_model_on_one_gpu.netD2, 'D2', global_iteration+iteration_D2, self.opt)
 
             self.update_learning_rate(epoch)
