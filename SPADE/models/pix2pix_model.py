@@ -37,12 +37,12 @@ class Pix2PixModel(torch.nn.Module):
     # of deep networks. We used this approach since DataParallel module
     # can't parallelize custom functions, we branch to different
     # routines based on |mode|.
-    def forward(self, data, mode, one_hot=False):
+    def forward(self, data, mode, one_hot=False, triple=False):
         if 'end2end' in mode:
             end2end = True
         else:
             end2end = False
-        input_semantics, real_image, fake_semantics = self.preprocess_input(data, one_hot=one_hot, end2end=end2end)
+        input_semantics, real_image, fake_semantics = self.preprocess_input(data, one_hot=one_hot, end2end=end2end, triple=triple)
 
         if mode == 'generator':
             g_loss, generated = self.compute_generator_loss(
@@ -121,7 +121,7 @@ class Pix2PixModel(torch.nn.Module):
     # transforming the label map to one-hot encoding
     # |data|: dictionary of the input data
 
-    def preprocess_input(self, data, one_hot=False, end2end=False):
+    def preprocess_input(self, data, one_hot=False, end2end=False, triple=False):
         # move to GPU and change data types
         if not one_hot:
             data['label'] = data['label'].long()
@@ -147,9 +147,14 @@ class Pix2PixModel(torch.nn.Module):
                 else self.opt.label_nc
             input_label = self.FloatTensor(bs, nc, h, w).zero_()
             input_semantics = input_label.scatter_(1, label_map, 1.0)
-            disp_map = data['disp']
             
-            if self.opt.from_disp:
+            if self.opt.from_disp and not triple:
+                disp_map = data['disp']
+                input_semantics = torch.cat((input_semantics, disp_map), dim=1)
+                
+            if triple:
+                disp_map = data['disp']
+                data['fake_label'] = torch.cat((data['fake_label'], disp_map), dim=1)
                 input_semantics = torch.cat((input_semantics, disp_map), dim=1)
 
             # concatenate instance map if it exists
@@ -160,7 +165,7 @@ class Pix2PixModel(torch.nn.Module):
 
             return input_semantics, data['image'], data['fake_label']
         else:
-            return input_semantics, data['image'], data['fake_label']
+            return data['label'], data['image'], data['fake_label']
 
     def compute_generator_loss(self, input_semantics, real_image):
         G_losses = {}
