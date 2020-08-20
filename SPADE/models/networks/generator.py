@@ -40,20 +40,20 @@ class SPADEGenerator(BaseNetwork):
             # downsampled segmentation map instead of random z
             self.fc = nn.Conv2d(self.opt.semantic_nc, 16 * nf, 3, padding=1)
 
-        self.head_0 = SPADEResnetBlock(16 * nf, 16 * nf, opt)
+        self.head_0 = SPADEResnetBlock(16 * nf, 16 * nf, opt, triple)
 
-        self.G_middle_0 = SPADEResnetBlock(16 * nf, 16 * nf, opt)
-        self.G_middle_1 = SPADEResnetBlock(16 * nf, 16 * nf, opt)
+        self.G_middle_0 = SPADEResnetBlock(16 * nf, 16 * nf, opt, triple)
+        self.G_middle_1 = SPADEResnetBlock(16 * nf, 16 * nf, opt, triple)
 
-        self.up_0 = SPADEResnetBlock(16 * nf, 8 * nf, opt)
-        self.up_1 = SPADEResnetBlock(8 * nf, 4 * nf, opt)
-        self.up_2 = SPADEResnetBlock(4 * nf, 2 * nf, opt)
-        self.up_3 = SPADEResnetBlock(2 * nf, 1 * nf, opt)
+        self.up_0 = SPADEResnetBlock(16 * nf, 8 * nf, opt, triple)
+        self.up_1 = SPADEResnetBlock(8 * nf, 4 * nf, opt, triple)
+        self.up_2 = SPADEResnetBlock(4 * nf, 2 * nf, opt, triple)
+        self.up_3 = SPADEResnetBlock(2 * nf, 1 * nf, opt, triple)
 
         final_nc = nf
 
         if opt.num_upsampling_layers == 'most':
-            self.up_4 = SPADEResnetBlock(1 * nf, nf // 2, opt)
+            self.up_4 = SPADEResnetBlock(1 * nf, nf // 2, opt, triple)
             final_nc = nf // 2
 
         self.conv_img = nn.Conv2d(final_nc, 3, 3, padding=1)
@@ -132,7 +132,7 @@ class SPADEGenerator(BaseNetwork):
 
 class Pix2PixHDGenerator(BaseNetwork):
     @staticmethod
-    def modify_commandline_options(parser, is_train):
+    def modify_commandline_options(parser, is_train, triple=False):
         parser.add_argument('--resnet_n_downsample', type=int, default=4, help='number of downsampling layers in netG')
         parser.add_argument('--resnet_n_blocks', type=int, default=9, help='number of residual blocks in the global generator network')
         parser.add_argument('--resnet_kernel_size', type=int, default=3,
@@ -144,7 +144,7 @@ class Pix2PixHDGenerator(BaseNetwork):
 
     def __init__(self, opt):
         super().__init__()
-        if opt.from_disp:
+        if opt.from_disp or triple:
             input_nc = opt.disp_nc + (1 if opt.contain_dontcare_label else 0) + (0 if opt.no_instance else 1)
         else:
             input_nc = opt.label_nc + (1 if opt.contain_dontcare_label else 0) + (0 if opt.no_instance else 1)
