@@ -91,7 +91,7 @@ class SupDataset(BaseDataset):
 
         transform_im = self.transform_im.copy()
         transform_lbl = self.transform_lbl.copy()
-        transform_disp = self.transform_disp.copy()
+        transform_disp = self.transform_im.copy()
         flip = random.random() > 0.5
         if not flip:
             if 'cityscapes' in self.opt.dataset:
