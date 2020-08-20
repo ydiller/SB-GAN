@@ -31,6 +31,8 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
 
         self.progressive_model = ProgressiveSegModel(opt, n_samples, D_inputs=D_inputs, load_all=True)
         self.pix2pix_model = Pix2PixModel(opt, end2end=opt.end2end)
+        if opt.end2endtri:
+            self.pix2pix_model2 = Pix2PixModel(opt, end2end=opt.end2end, triple=True)
         self.netD2 = self.initialize_networks()
 
     def initialize_networks(self):
@@ -56,22 +58,23 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
             return None
 
 
-    def forward(self,iteration, global_iteration, dim_ind, z,  im_mc, im_seg, im , scaling,
+    def forward(self,iteration, global_iteration, dim_ind, z,  im_mc, im_seg, im , disp, scaling,
                 interpolate=False, alpha=None, mode=''):
         z = z.cuda()
         im_mc = im_mc.cuda()
         im = im.cuda()
         im_seg = im_seg.cuda()
+        disp = disp.cuda()
 
         if mode == 'generator_end2end':
-            print('got to end2end model')
-            g_loss, fake_semantics = self.compute_end2end_generator_loss( im_mc, im, z, iteration, global_iteration, dim_ind, 
+            #print('got to end2end model')
+            g_loss, fake_semantics = self.compute_end2end_generator_loss( im_mc, im, disp, z, iteration, global_iteration, dim_ind, 
                                 scaling, interpolate, hard=True)
             
-            print('got to end2end model2')
+            #print('got to end2end model2')
             return g_loss, fake_semantics
         if mode == 'discriminator_end2end':
-            d_loss = self.compute_end2end_discriminator_loss(im_mc, im_seg, im, z ,iteration, global_iteration,dim_ind,
+            d_loss = self.compute_end2end_discriminator_loss(im_mc, im_seg, im, disp, z ,iteration, global_iteration,dim_ind,
                     scaling, interpolate,alpha, hard=True)
             return d_loss
         
@@ -81,7 +84,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
             return d_loss
 
         if mode == 'inference':
-            fake_seg, fake_im_f, fake_im_r = self.log_images(im_mc, im, z, global_iteration, scaling, alpha)
+            fake_seg, fake_im_f, fake_im_r = self.log_images(im_mc, im, disp, z, global_iteration, scaling, alpha)
             return fake_seg, fake_im_f, fake_im_r
 
 
@@ -133,7 +136,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
 
 
 
-    def compute_end2end_generator_loss(self, real_semantics, real_image, z, iteration, global_iteration, dim_ind, 
+    def compute_end2end_generator_loss(self, real_semantics, real_image, real_disp, z, iteration, global_iteration, dim_ind, 
                                 scaling, interpolate=False, hard=True):
         G_losses = {}
 
@@ -148,8 +151,13 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         if self.opt.update_pix2pix_w_D2 or self.opt.update_progan_w_D2:
             upsample = nn.Upsample(scale_factor=scaling, mode='nearest')
             x_fake_mc_up = upsample(fake_semantics)
-
-            fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_image)
+            
+            if self.opt.end2endtri:
+                fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
+                semantics = torch.cat((x_fake_mc, fake_disp_f), dim=1)
+                fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, triple=True)
+            else:
+                fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_image)
             pred_fake, pred_real = self.discriminate(fake_im_f, real_image)
             G_losses['GAN_fff'] = self.opt.lambda_D2*self.pix2pix_model.criterionGAN(pred_fake, True,
                                                 for_discriminator=False)
@@ -157,8 +165,13 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
 
         #ffr: fake from real
         if self.opt.update_pix2pix:
-            g_loss, fake_im_r = self.pix2pix_model.compute_generator_loss(
-                real_semantics, real_image)
+            if not self.opt.end2endtri:
+                g_loss, fake_im_r = self.pix2pix_model.compute_generator_loss(
+                    real_semantics, real_image)
+            if self.opt.end2endtri:
+                semantics = torch.cat((real_semantics, real_disp), dim=1)
+                g_loss, fake_im_r = self.pix2pix_model2.compute_generator_loss(
+                    semantics, real_image, triple=True)
             G_losses['GAN_ffr'] = g_loss['GAN'] 
             if not self.opt.no_ganFeat_loss:
                 G_losses['GAN_Feat'] = g_loss['GAN_Feat']
@@ -198,7 +211,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         return D_losses
 
 
-    def compute_discriminator_loss(self, im_mc, im, z ,iteration, global_iteration,dim_ind,scaling,
+    def compute_discriminator_loss(self, im_mc, im, disp, z ,iteration, global_iteration,dim_ind,scaling,
                          interpolate=False, hard=True):
         # im_mc = nn.functional.interpolate(im_mc, size=[int(im_mc.size(2)/scaling), int(im_mc.size(3)/scaling)],
         #     mode='bilinear')
@@ -236,20 +249,25 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
 
 
 
-    def compute_end2end_discriminator_loss(self, real_semantics, real_semantics_one, real_image, z ,iteration, global_iteration,dim_ind,
+    def compute_end2end_discriminator_loss(self, real_semantics, real_semantics_one, real_image, real_disp, z ,iteration, global_iteration,dim_ind,
                     scaling, interpolate=False,alpha=None,  hard=True):
         D_losses = {}
 
 
-        d_loss, x_fake_mc = self.compute_discriminator_loss(real_semantics, real_image, z ,iteration, global_iteration,dim_ind,
+        d_loss, x_fake_mc = self.compute_discriminator_loss(real_semantics, real_image, real_disp, z ,iteration, global_iteration,dim_ind,
                     scaling, interpolate, hard=hard)
         if self.opt.update_progan:
             D_losses['GAN_pro'] = d_loss * self.opt.lambda_pgan
 
 
         if self.opt.update_pix2pix:
-            d_loss = self.pix2pix_model.compute_discriminator_loss(
-                        real_semantics, real_image)
+            if not self.opt.end2endtri:
+                d_loss = self.pix2pix_model.compute_discriminator_loss(
+                            real_semantics, real_image)
+            if self.opt.end2endtri:
+                semantics = torch.cat((real_semantics, real_disp), dim=1)
+                d_loss = self.pix2pix_model2.compute_discriminator_loss(
+                            semantics, real_image, triple=True)
             D_losses['D_Fake_ffr'] = d_loss['D_Fake']
             D_losses['D_real'] = d_loss['D_real']
 
@@ -261,7 +279,16 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
 
 
             with torch.no_grad():
-                fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, real_image, compute_kld_loss=False)
+                if self.opt.end2endtri:
+                    fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, real_disp)
+                    semantics = torch.cat((x_fake_mc, fake_disp_f), dim=1)
+                    fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, compute_kld_loss=False, triple=True)
+                    fake_disp_f = fake_disp_f.detach()
+                    fake_disp_f.requires_grad_()
+                    semantics = semantics.detach()
+                    semantics.requires_grad_()
+                else:
+                    fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, real_image, compute_kld_loss=False)
                 fake_im_f = fake_im_f.detach()
                 fake_im_f.requires_grad_()
                 x_fake_mc = x_fake_mc.detach()
@@ -275,10 +302,13 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         return D_losses
     
 
-    def log_images(self, real_semantics, real_im, z,global_iteration,scaling, alpha=None):
+    def log_images(self, real_semantics, real_im, real_disp, z,global_iteration,scaling, alpha=None):
         x_fake, x_fake_mc = self.progressive_model.generate_fake(alpha, z, global_iteration, vis=False)
         fake_im_r = torch.Tensor(x_fake.size(0), 1).cuda()
         fake_im_f = torch.Tensor(x_fake.size(0), 1).cuda()
+        if self.opt.end2endtri:
+            fake_disp_f = torch.Tensor(x_fake.size(0), 1).cuda()
+            fake_im_disp = torch.Tensor(x_fake.size(0), 1).cuda()
 
         with torch.no_grad():
             fake_im_r, _ = self.pix2pix_model.generate_fake(real_semantics, real_im)
@@ -286,10 +316,17 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         with torch.no_grad():
             # if not self.opt.update_progan and not self.opt.update_progan_w_D2:
             self.pix2pix_model.eval()
+            if self.opt.end2endtri:
+                self.pix2pix_model2.eval()
             x_fake_mc_up = upsample(x_fake_mc)
-            fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_im)
+            if not self.opt.end2endtri:
+                fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_im)
+            if self.opt.end2endtri:
+                fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
+                input_semantics = torch.cat((x_fake_mc_up, fake_disp_f), dim=1)
+                fake_im_f, _ = self.pix2pix_model2.generate_fake(input_semantics, real_im, triple=True)
 
-        return x_fake,fake_im_f, fake_im_r 
+        return x_fake,fake_im_f, fake_im_r
         
 
 
