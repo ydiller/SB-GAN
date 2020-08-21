@@ -528,8 +528,9 @@ class ProgressiveTrainer:
         upsample = nn.Upsample(scale_factor=scaling, mode='nearest')
         for i in range(int(nums_fid/batchsize)):
 
-            real_segs, _, real_ims, _ = self.next_batch_eval()
+            real_segs, _, real_ims, _, real_disps, _ = self.next_batch_eval()
             real_ims = Variable(real_ims).cuda()
+            real_disps = Variable(real_disps).cuda()
             real_segs = real_segs.cuda()
             # real_ims = real_ims[:,:,::2,::2]
             with torch.no_grad():
@@ -549,6 +550,10 @@ class ProgressiveTrainer:
 
 
                 with torch.no_grad():
+                    if self.opt.end2endtri:
+                        fake_disp_f, _ = self.pix2pix_model.generate_fake(fake, real_disps)
+                        semantics = torch.cat((fake, fake_disp_f), dim=1)
+                        fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_ims, compute_kld_loss=False, triple=True)
                     fake_im_f, _ = self.pix2pix_model.generate_fake(fake, real_ims, compute_kld_loss=False)
                     # fake_im_f = fake_im_f[:,:,::2,::2]
                     fake_acts = get_activations(fake_im_f, self.inception_model, batchsize, cuda=True)
@@ -559,7 +564,8 @@ class ProgressiveTrainer:
                 real_segs_mc = real_segs_mc.scatter_(1, real_segs.long(), 1.0)
 
                 with torch.no_grad():
-                    fake_im_r, _ = self.pix2pix_model.generate_fake(real_segs_mc, real_ims, compute_kld_loss=False)
+                    semantics2 = torch.cat((real_segs_mc, real_disps), dim=1)
+                    fake_im_r, _ = self.pix2pix_model2.generate_fake(semantics2, real_ims, compute_kld_loss=False, triple=True)
                     # fake_im_r = fake_im_r[:,:,::2,::2]
                     fake_acts = get_activations(fake_im_r, self.inception_model, batchsize, cuda=True)
                 all_fakes[i*batchsize:i*batchsize+fake_acts.shape[0],:] = fake_acts
