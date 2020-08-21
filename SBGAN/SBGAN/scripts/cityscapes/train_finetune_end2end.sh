@@ -56,6 +56,13 @@ if [ ! -f "${ckpt}/${name}/${spade_epoch}_net_G.pth" ]; then
     cp "${spade_pretrained}/${spade_epoch}_net_D.pth" "${ckpt}/${name}/"
 fi
 
+spade_pretrained2="${ckpt}/SPADE/weights/${name_joint}"
+#spade_pretrained="../SPADE/${ckpt}/${name_joint}"
+if [ ! -f "${ckpt}/${name}/${spade_epoch}_net_G_triple.pth" ]; then
+    cp "${spade_pretrained2}/${spade_epoch}_net_G_triple.pth" "${ckpt}/${name}/"
+    cp "${spade_pretrained2}/${spade_epoch}_net_D_triple.pth" "${ckpt}/${name}/"
+fi
+
 
 
 CUDA_VISIBLE_DEVICES=$gpu_ids python SBGAN/trainers/progressive_seg_end2end_trainer.py --name ${name} --dataset ${dataset} \
