@@ -135,11 +135,11 @@ class ProgressiveTrainer:
         seg_mc = seg_mc.scatter_(1,seg.long(),1.0)
         return seg, seg_mc, im, disp
 
-    def step_discriminator(self, iteration, global_iteration, dim_ind,seg_mc,seg, im, scaling, phase):
+    def step_discriminator(self, iteration, global_iteration, dim_ind,seg_mc,seg, im, disp, scaling, phase):
         self.optimizer_D2.zero_grad()
 
         z = torch.randn(self.opt.batchSize, 512)
-        D_losses = self.end2end_model(iteration, global_iteration,dim_ind, z, seg_mc.cpu(),seg.cpu(), im.cpu(),
+        D_losses = self.end2end_model(iteration, global_iteration,dim_ind, z, seg_mc.cpu(),seg.cpu(), im.cpu(), disp.cpu(),
                         scaling, interpolate=phase == "fade", mode='discriminator')
 
         D_losses = sum(D_losses.values()).mean()
