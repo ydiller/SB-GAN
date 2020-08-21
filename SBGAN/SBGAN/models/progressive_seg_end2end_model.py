@@ -79,7 +79,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
             return d_loss
         
         if mode == 'discriminator':
-            d_loss = self.compute_discriminator2_loss(im_mc, im, z, global_iteration,
+            d_loss = self.compute_discriminator2_loss(im_mc, im, disp, z, global_iteration,
                         scaling, interpolate)
             return d_loss
 
@@ -181,7 +181,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         
         return G_losses, fake_semantics
 
-    def compute_discriminator2_loss(self, real_semantics, real_image, z, global_iteration,
+    def compute_discriminator2_loss(self, real_semantics, real_image, real_disp, z, global_iteration,
                     scaling, interpolate=False):
 
         D_losses = {}
@@ -193,14 +193,22 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         x_fake_mc = upsample(x_fake_mc)
 
         with torch.no_grad():
-            fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, real_image, compute_kld_loss=False)
+            
+            fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, real_disp)
+            semantics = torch.cat((x_fake_mc, fake_disp_f), dim=1)
+            fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, compute_kld_loss=False, triple=True)
             fake_im_f = fake_im_f.detach()
             fake_im_f.requires_grad_()
             x_fake_mc = x_fake_mc.detach()
             x_fake_mc.requires_grad_()
+            fake_disp_f = fake_disp_f.detach()
+            fake_disp_f.requires_grad_()
+            semantics = semantics.detach()
+            semantics.requires_grad_()
 
-            fake_im_r, _ = self.pix2pix_model.generate_fake(
-                real_semantics, real_image, compute_kld_loss=self.opt.use_vae)
+            semantics2 = torch.cat((real_semantics, real_disp), dim=1)
+            fake_im_r, _ = self.pix2pix_model2.generate_fake(
+                semantics2, real_image, compute_kld_loss=self.opt.use_vae, triple=True)
 
         pred_fake, pred_real = self.discriminate(fake_im_f, real_image)
         D_losses['D_Fake_fff'] = self.pix2pix_model.criterionGAN(pred_fake, False,
