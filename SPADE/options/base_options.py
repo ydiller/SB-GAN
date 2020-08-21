@@ -42,6 +42,7 @@ class BaseOptions():
 
         # for setting inputs
         #parser.add_argument('--dataroot', type=str, default='/data/input/')
+        parser.add_argument('--end2endtri', action='store_true', help='end-to-end model with 3 parts')
         parser.add_argument('--disp_nc', type=int, default=4, help='# of input disparity channels')
         parser.add_argument('--from_disp', action='store_true', default=0, help='using disparity images as input')
         parser.add_argument('--dataroot', type=str, default='./datasets/cityscapes/')
