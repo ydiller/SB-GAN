@@ -456,14 +456,15 @@ class ProgressiveTrainer:
 
 
     def test_model(self , global_iteration, n_sample=1000):
-        if not os.path.isdir('samples'):
-            os.mkdir('samples')
-        if not os.path.isdir('samples/%s'%self.opt.name):
-            os.mkdir('samples/%s'%self.opt.name)
+        if not os.path.isdir('/data/test_results/samples'):
+            os.mkdir('/data/test_results/samples')
+        if not os.path.isdir('/data/test_results/samples/%s'%self.opt.name):
+            os.mkdir('/data/test_results/samples/%s'%self.opt.name)
         self.num_semantics = self.progressive_model.num_semantics
         print('resolution:',int(self.opt.crop_size/self.opt.aspect_ratio))
         self.set_data_resolution(int(self.opt.crop_size/self.opt.aspect_ratio))
         self.pix2pix_model.eval()
+        self.pix2pix_model2.eval()
         self.progressive_model.generator.eval()
         z_predefined = torch.Tensor(np.load('z_fixed.npy')).cuda()
         num_bs = 1
@@ -480,34 +481,43 @@ class ProgressiveTrainer:
             x_fake_ = self.progressive_model.color_transfer(x_fake)
             fake = x_fake_.cpu()
             
-            seg, _, im, _ = self.next_batch_eval()
-            seg, seg_mc, im = self.call_next_batch(seg,im)
+            seg, _, im, _, disp, _ = self.next_batch_eval()
+            seg, seg_mc, im, disp = self.call_next_batch(seg,im)
             seg_color =  self.progressive_model.color_transfer(seg)
 
             #pix2pix from fake segmenrations
 
             with torch.no_grad():
-                fake_im,_ = self.pix2pix_model.generate_fake(x_fake_mc, im)
+                if self.opt.end2endtri:
+                    fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, disp)
+                    semantics = torch.cat((x_fake_mc, fake_disp_f), dim=1)
+                    fake_im,_ = self.pix2pix_model2.generate_fake(semantics, im, triple=True)
+                else:
+                    fake_im,_ = self.pix2pix_model.generate_fake(x_fake_mc, im)
             fake_im = fake_im.cpu()
             x_fake = x_fake.cpu()
             for j in range(num_bs):
                 self.city35to19(x_fake[j,:,:,:], i,j ,num_bs, global_iteration)
 
-                save_image(fake[j,:,:,:], 'samples/%s/%s_pg_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
+                save_image(fake[j,:,:,:], '/data/test_results/samples/%s/%s_pg_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
 
-                save_image(fake_im[j,:,:,:], 'samples/%s/%s_spade_fff_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
+                save_image(fake_im[j,:,:,:], '/data/test_results/samples/%s/%s_spade_fff_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
 
             #pix2pix from real segmentations
             with torch.no_grad():
-                fake_im, _ = self.pix2pix_model.generate_fake(seg_mc, im)
+                if self.opt.end2endtri:
+                    semantics2 = torch.cat((seg_mc, disp), dim=1)
+                    fake_im, _ = self.pix2pix_model2.generate_fake(semantics2, im, triple=True)
+                else:
+                    fake_im, _ = self.pix2pix_model.generate_fake(seg_mc, im)
             fake_im = fake_im.cpu()
             for j in range(num_bs):
-                save_image(fake_im[j,:,:,:], 'samples/%s/%s_spade_ffr_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
+                save_image(fake_im[j,:,:,:], '/data/test_results/samples/%s/%s_spade_ffr_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
             for j in range(num_bs):
-                save_image(seg_color[j,:,:,:], 'samples/%s/%s_seg_real_spade_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
+                save_image(seg_color[j,:,:,:], '/data/test_results/samples/%s/%s_seg_real_spade_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
 
         fid_real = self.compute_FID(global_iteration, real_fake='fake')
