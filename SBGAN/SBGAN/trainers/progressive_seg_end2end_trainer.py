@@ -357,8 +357,10 @@ class ProgressiveTrainer:
                 iter_counter.record_one_iteration()
                 seg, _, im, _, disp, _ = self.next_batch()
                 seg, seg_mc, im, disp = self.call_next_batch(seg,im,disp)
-
+                
+                print('before generator')
                 G_losses = self.step_generator_end2end(iteration, global_iteration, dim_ind, seg_mc, seg, im, disp, scaling, phase)
+                print('after generator')
 
                 D_losses = self.step_discriminator_end2end(iteration, global_iteration, dim_ind, seg_mc, seg, im, disp, scaling, phase)
                 # print('disc', time.time()-t3)
