@@ -359,6 +359,8 @@ class ProgressiveTrainer:
                 seg, seg_mc, im, disp = self.call_next_batch(seg,im,disp)
                 
                 print('before generator')
+                import ipdb
+                ipdb.set_trace()
                 G_losses = self.step_generator_end2end(iteration, global_iteration, dim_ind, seg_mc, seg, im, disp, scaling, phase)
                 print('after generator')
 
