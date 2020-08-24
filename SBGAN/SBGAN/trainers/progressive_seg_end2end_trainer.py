@@ -341,6 +341,8 @@ class ProgressiveTrainer:
                         "fid_fake",
                         fid,global_iteration,
                     )
+                import ipdb
+                ipdb.set_trace()
                 fid = self.compute_FID(global_iteration, z_fixed=z_fid, real_fake='real') #real_fake='real'/fake
                 self.progressive_model.writer.add_scalar(
                         "fid_real",
