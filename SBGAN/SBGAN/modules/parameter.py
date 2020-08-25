@@ -32,6 +32,7 @@ class parameters(TrainOptions):
         parser.add_argument('--test', action='store_true',help='run the model in eval phase and generate samples')
         parser.add_argument('--no_update_spade', action='store_true',help='do not train spade in the end to end model')
         parser.add_argument('--end2end', action='store_true',help='end2end with spade, it can run in two modes: either with/without no_update_spade')
+        parser.add_argument('--end2endtri', action='store_true',help='end2end with 3 stages')
         parser.add_argument('--save_path', type=str, default='/data/SBresults')
         #parser.add_argument('--save_path', type=str, default='./')
         parser.add_argument('--sample_path', type=str, default='fake_samples.npy')
