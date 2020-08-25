@@ -100,12 +100,17 @@ class SPADE(nn.Module):
 
         # Part 1. generate parameter-free normalized activations
         normalized = self.param_free_norm(x)
+        print('finished normalized')
 
         # Part 2. produce scaling and bias conditioned on semantic map
         segmap = F.interpolate(segmap, size=x.size()[2:], mode='nearest')
+        print('finished interpolate')
         actv = self.mlp_shared(segmap)
+        print('finished actv')
         gamma = self.mlp_gamma(actv)
+        print('finished gamma')
         beta = self.mlp_beta(actv)
+        print('finished beta')
 
         # apply scale and bias
         out = normalized * (1 + gamma) + beta
