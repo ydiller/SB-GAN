@@ -63,9 +63,9 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
                 interpolate=False, alpha=None, mode=''):
         z = z.cuda()
         im_mc = im_mc.cuda()
-        im = Variable(im).cuda()
+        im = im.cuda()
         im_seg = im_seg.cuda()
-        disp = Variable(disp).cuda()
+        disp = disp.cuda()
 
         if mode == 'generator_end2end':
             print('got to end2end model')
