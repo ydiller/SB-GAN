@@ -9,6 +9,7 @@ sys.path.insert(0, main_dir)
 import torch
 from torchvision import transforms
 import torch.nn as nn
+from torch.autograd import Variable
 
 from SBGAN.models import print_network
 from SBGAN.models.progressive_seg_model import ProgressiveSegModel
