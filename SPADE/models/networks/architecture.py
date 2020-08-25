@@ -58,10 +58,8 @@ class SPADEResnetBlock(nn.Module):
     # the semantic segmentation map as input
     def forward(self, x, seg):
         x_s = self.shortcut(x, seg)
-        print('finished shortcut in up_3')
 
         dx = self.conv_0(self.actvn(self.norm_0(x, seg)))
-        print('finished conv_0 in up_3')
         dx = self.conv_1(self.actvn(self.norm_1(dx, seg)))
         print('finished conv_1 in up_3')
 
