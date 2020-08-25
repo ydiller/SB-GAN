@@ -119,7 +119,6 @@ class SPADEGenerator(BaseNetwork):
         print('finished up_0')
         x = self.up(x)
         x = self.up_1(x, seg.detach()
-        print('finished up_1')
         x = self.up(x)
         x = self.up_2(x, seg.detach())
         print('finished up_2')
