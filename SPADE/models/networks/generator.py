@@ -103,7 +103,6 @@ class SPADEGenerator(BaseNetwork):
                 print('finished fc')
 
         x = self.head_0(x, seg.detach())
-        print('finished head_0')
 
         x = self.up(x)
         x = self.G_middle_0(x, seg.detach())
@@ -113,15 +112,20 @@ class SPADEGenerator(BaseNetwork):
             x = self.up(x)
 
         x = self.G_middle_1(x, seg.detach())
+        print('finished G_middle_1')
 
         x = self.up(x)
         x = self.up_0(x, seg.detach())
+        print('finished up_0')
         x = self.up(x)
-        x = self.up_1(x, seg.detach())
+        x = self.up_1(x, seg.detach()
+        print('finished up_1'))
         x = self.up(x)
         x = self.up_2(x, seg.detach())
+        print('finished up_2')
         x = self.up(x)
         x = self.up_3(x, seg.detach())
+        print('finished up_3')
 
         if self.opt.num_upsampling_layers == 'most':
             x = self.up(x)
