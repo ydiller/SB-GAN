@@ -67,7 +67,6 @@ class SPADEResnetBlock(nn.Module):
         print('dx shape is: ', dx.shape)
 
         out = x_s + dx
-        print('finished out')
 
         return out
 
