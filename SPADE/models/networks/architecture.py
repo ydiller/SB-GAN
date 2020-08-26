@@ -63,7 +63,8 @@ class SPADEResnetBlock(nn.Module):
         dx = self.norm_1(dx, seg)
         dx = self.actvn(dx)
         dx = self.conv_1(dx)
-        print('finished conv_1 in up_3')
+        print('x_s shape is: ', x_s.shape)
+        print('dx shape is: ', dx.shape)
 
         out = x_s + dx
         print('finished out')
