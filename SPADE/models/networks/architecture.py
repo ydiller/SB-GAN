@@ -60,11 +60,8 @@ class SPADEResnetBlock(nn.Module):
         x_s = self.shortcut(x, seg)
 
         dx = self.conv_0(self.actvn(self.norm_0(x, seg)))
-        print('finished conv_0')
         dx = self.norm_1(dx, seg)
-        print('finished norm_1')
         dx = self.actvn(dx)
-        print('finished actvn')
         dx = self.conv_1(dx)
         print('x_s shape is: ', x_s.shape)
         print('dx shape is: ', dx.shape)
