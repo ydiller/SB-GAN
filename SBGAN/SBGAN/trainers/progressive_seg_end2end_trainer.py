@@ -448,7 +448,7 @@ class ProgressiveTrainer:
             old2new[l] = new_label[l]
 
         input = input.numpy()
-        I = Image.fromarray(input[0,:,:].astype('uint8'))
+        I = PIL.Image.fromarray(input[0,:,:].astype('uint8'))
         I.save('samples/%s/%s_label35_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration))
 
         for ids in range(35): #35
