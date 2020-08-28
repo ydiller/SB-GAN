@@ -125,9 +125,7 @@ class SPADEGenerator(BaseNetwork):
             x = self.up_4(x, seg.detach())
 
         x = self.conv_img(F.leaky_relu(x, 2e-1))
-        print('finished conv_img')
         x = F.tanh(x)
-        print('finished generator forward')
 
         return x
 
