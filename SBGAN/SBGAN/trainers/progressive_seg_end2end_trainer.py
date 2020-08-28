@@ -486,6 +486,7 @@ class ProgressiveTrainer:
             seg, _, im, _, disp, _ = self.next_batch_eval()
             seg, seg_mc, im, disp = self.call_next_batch(seg,im, disp)
             seg_color =  self.progressive_model.color_transfer(seg)
+            disp = disp.cuda()
 
             #pix2pix from fake segmenrations
 
@@ -497,6 +498,8 @@ class ProgressiveTrainer:
                 else:
                     fake_im,_ = self.pix2pix_model.generate_fake(x_fake_mc, im)
             fake_im = fake_im.cpu()
+            fake_disp_f = fake_disp_f.cpu()
+            semantics = semantics.cpu()
             x_fake = x_fake.cpu()
             for j in range(num_bs):
                 self.city35to19(x_fake[j,:,:,:], i,j ,num_bs, global_iteration)
