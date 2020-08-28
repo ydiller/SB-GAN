@@ -245,7 +245,6 @@ class Pix2PixModel(torch.nn.Module):
                 KLD_loss = self.KLDLoss(mu, logvar) * self.opt.lambda_kld
 
         if triple:
-            print('got to generator')
             fake_image = self.netG_1(input_semantics, z=z)
         if not triple:
             fake_image = self.netG(input_semantics, z=z)
