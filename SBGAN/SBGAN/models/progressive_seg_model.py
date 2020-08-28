@@ -261,7 +261,19 @@ class ProgressiveSegModel(torch.nn.Module):
             ret = y_soft
             return 0, ret
 
+          
+    def inferenceSampler(self,fake, scaling, num_semantics):
+            index = fake.max(1, keepdim=True)[1]
+            x_fake_mc = torch.zeros_like(fake).scatter_(1, index, 1.0)
+            x_fake = index.type(torch.cuda.FloatTensor)
+            upsample = nn.Upsample(scale_factor=scaling, mode='nearest')
 
+            x_fake_mc = upsample(x_fake_mc)
+            x_fake = upsample(x_fake)
+            x_fake[x_fake > num_semantics-1]= 0
+            return x_fake, x_fake_mc
+          
+          
     def color_transfer(self, im):
         im = im.cpu().numpy()
         im_new = torch.Tensor(im.shape[0],3,im.shape[2], im.shape[3])
