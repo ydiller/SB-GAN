@@ -29,5 +29,5 @@ nums_fid=500
 CUDA_VISIBLE_DEVICES=$gpu_ids python SBGAN/trainers/progressive_seg_end2end_trainer.py --test --name ${name} --dataset ${dataset}\
    --dataset_mode ${dataset} --dataroot ${dataroot} --num_semantics ${num_semantics} --label_seg ${label_seg} \
   --nums_fid ${nums_fid} --which_iter_D2 ${D2_iter} --which_iter ${pro_iter} --which_epoch ${spade_epoch} \
-  --load_size ${load_size} --crop_size ${crp_size} --checkpoints_dir ${ckpt} --batchSize ${bs} --N 1000 --no_instance\
+  --load_size ${load_size} --crop_size ${crp_size} --checkpoints_dir ${ckpt} --batchSize ${bs} --N 1000 --no_instance --contain_dontcare_label\
 
