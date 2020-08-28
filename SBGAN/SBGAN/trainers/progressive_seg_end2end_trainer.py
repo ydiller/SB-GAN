@@ -484,7 +484,7 @@ class ProgressiveTrainer:
             fake = x_fake_.cpu()
             
             seg, _, im, _, disp, _ = self.next_batch_eval()
-            seg, seg_mc, im, disp = self.call_next_batch(seg,im)
+            seg, seg_mc, im, disp = self.call_next_batch(seg,im, disp)
             seg_color =  self.progressive_model.color_transfer(seg)
 
             #pix2pix from fake segmenrations
