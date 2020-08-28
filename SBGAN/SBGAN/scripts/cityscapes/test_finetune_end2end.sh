@@ -11,7 +11,8 @@
 gpu_ids=0
 name=ft_ade_indoor_end2end
 dataset=cityscapes
-dataroot=datasets/cityscapes
+#dataroot=datasets/cityscapes
+dataroot=/data/input
 ckpt=weights
 spade_epoch=200
 pro_iter=298900
