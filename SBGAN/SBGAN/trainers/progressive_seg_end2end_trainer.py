@@ -453,7 +453,7 @@ class ProgressiveTrainer:
 
         for ids in range(35): #35
             input= np.where(input==ids, old2new[ids], input)
-        input = Image.fromarray(input[0,:,:].astype('uint8'))
+        input = PIL.Image.fromarray(input[0,:,:].astype('uint8'))
         input.save('/data/test_results/samples/%s/%s_label19_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration))
 
 
