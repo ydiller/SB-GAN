@@ -488,7 +488,7 @@ class ProgressiveTrainer:
             seg_color =  self.progressive_model.color_transfer(seg)
             disp = disp.cuda()
 
-            #pix2pix from fake segmenrations
+            #pix2pix from fake segmentations
 
             with torch.no_grad():
                 if self.opt.end2endtri:
@@ -507,6 +507,9 @@ class ProgressiveTrainer:
                 save_image(fake[j,:,:,:], '/data/test_results/samples/%s/%s_pg_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
 
+                save_image(fake_disp_f[j,:,:,:], '/data/test_results/samples/%s/%s_disp_spade_fff_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
+                             nrow=1, normalize=True, range=(-1,1))
+                
                 save_image(fake_im[j,:,:,:], '/data/test_results/samples/%s/%s_spade_fff_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
 
@@ -521,8 +524,12 @@ class ProgressiveTrainer:
             for j in range(num_bs):
                 save_image(fake_im[j,:,:,:], '/data/test_results/samples/%s/%s_spade_ffr_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
+                
             for j in range(num_bs):
                 save_image(seg_color[j,:,:,:], '/data/test_results/samples/%s/%s_seg_real_spade_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
+                             nrow=1, normalize=True, range=(-1,1))
+                
+                save_image(disp[j,:,:,:], '/data/test_results/samples/%s/%s_disp_real_spade_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
 
         fid_real = self.compute_FID(global_iteration, real_fake='fake')
