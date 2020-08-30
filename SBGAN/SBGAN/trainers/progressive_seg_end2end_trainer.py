@@ -511,10 +511,10 @@ class ProgressiveTrainer:
                 save_image(fake[j,:,:,:], '/data/test_results/samples/cityscapes/%s_fake_semantic_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
                 
-                fake_disp_fig.save('/data/test_results/samples/cityscapes/%s_disp_spade_fff_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration), "jpg")
+                fake_disp_fig.save('/data/test_results/samples/cityscapes/%s_disp_spade_fff_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration))
                 fake_disp_fig.close()
                 
-                fake_im_fig.save('/data/test_results/samples/cityscapes/%s_spade_fff_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration), "jpg")
+                fake_im_fig.save('/data/test_results/samples/cityscapes/%s_spade_fff_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration))
                 fake_im_fig.close()
                 #save_image(fake[j,:,:,:], '/data/test_results/samples/%s/%s_pg_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              #nrow=1, normalize=True, range=(-1,1))
@@ -535,7 +535,7 @@ class ProgressiveTrainer:
             fake_im = fake_im.cpu()
             for j in range(num_bs):
                 fake_im_fig = im_trans(fake_im[j,:,:,:])
-                fake_im_fig.save('/data/test_results/samples/cityscapes/%s_disp_spade_ffr_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration), "jpg")
+                fake_im_fig.save('/data/test_results/samples/cityscapes/%s_disp_spade_ffr_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration))
                 fake_im_fig.close()
                 
                 #save_image(fake_im[j,:,:,:], '/data/test_results/samples/%s/%s_spade_ffr_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
@@ -543,7 +543,7 @@ class ProgressiveTrainer:
                 
             for j in range(num_bs):
                 disp_fig = im_trans(disp[j,:,:,:])
-                disp_fig.save('/data/test_results/samples/cityscapes/%s_disp_real_spade_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration), "jpg")
+                disp_fig.save('/data/test_results/samples/cityscapes/%s_disp_real_spade_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration))
                 disp_fig.close()
                 
                 save_image(seg_color[j,:,:,:], '/data/test_results/samples/cityscapes/%s_seg_real_spade_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration),
