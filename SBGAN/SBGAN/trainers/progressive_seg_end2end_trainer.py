@@ -542,7 +542,7 @@ class ProgressiveTrainer:
                              #nrow=1, normalize=True, range=(-1,1))
                 
             for j in range(num_bs):
-                disp_fig = im_trans(disp[j,:,:,:])
+                disp_fig = im_trans(disp[j,:,:,:].cpu())
                 disp_fig.save('/data/test_results/samples/cityscapes/%s_disp_real_spade_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration))
                 disp_fig.close()
                 
