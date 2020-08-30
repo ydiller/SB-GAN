@@ -501,7 +501,7 @@ class ProgressiveTrainer:
             fake_disp_f = fake_disp_f.cpu()
             semantics = semantics.cpu()
             x_fake = x_fake.cpu()
-            im_trans = transforms.ToPILImage(mode=RGB)
+            im_trans = transforms.ToPILImage(mode='RGB')
             for j in range(num_bs):
                 self.city35to19(x_fake[j,:,:,:], i,j ,num_bs, global_iteration)
                 
