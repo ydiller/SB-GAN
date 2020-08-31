@@ -493,7 +493,10 @@ class ProgressiveTrainer:
             with torch.no_grad():
                 if self.opt.end2endtri:
                     fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, disp)
+                    print('fake disp shape: ', fake_disp_f.shape)
+                    print('fake semantic shape: ', x_fake_mc.shape)
                     semantics = torch.cat((x_fake_mc, fake_disp_f), dim=1)
+                    print('cat shape: ',semantics.shape)
                     fake_im,_ = self.pix2pix_model2.generate_fake(semantics, im, triple=True)
                 else:
                     fake_im,_ = self.pix2pix_model.generate_fake(x_fake_mc, im)
