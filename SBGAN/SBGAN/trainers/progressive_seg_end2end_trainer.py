@@ -496,7 +496,7 @@ class ProgressiveTrainer:
                     semantics = torch.cat((x_fake_mc, fake_disp_f), dim=1)
                     cat_fake, cat_fake_mc = self.progressive_model.inferenceSampler(semantics, scaling, self.progressive_model.num_semantics)
                     cat_fake_ = self.progressive_model.color_transfer(cat_fake)
-                    fake_im,_ = self.pix2pix_model2.generate_fake(cat_fake, im, triple=True)
+                    fake_im,_ = self.pix2pix_model2.generate_fake(semantics, im, triple=True)
                     fake_disp_f = fake_disp_f.cpu()
                     fake_cat = cat_fake_.cpu()
                 else:
