@@ -118,7 +118,6 @@ class SPADEGenerator(BaseNetwork):
         x = self.up(x)
         x = self.up_2(x, seg.detach())
         x = self.up(x)
-        print('finished up')
         x = self.up_3(x, seg.detach())
 
         if self.opt.num_upsampling_layers == 'most':
@@ -127,7 +126,6 @@ class SPADEGenerator(BaseNetwork):
 
         x = self.conv_img(F.leaky_relu(x, 2e-1))
         x = F.tanh(x)
-        print('finished generator')
 
         return x
 
