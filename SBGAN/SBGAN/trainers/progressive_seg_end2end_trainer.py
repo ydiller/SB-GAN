@@ -650,7 +650,7 @@ if __name__ == "__main__":
     if opt.test:
         opt.isTrain = False
         opt.train = False
-        opt.end2endtri = True
+        #opt.end2endtri = True
         if opt.z_notdefined:
             z=np.random.randn(opt.N,512)
             np.save('z_fixed.npz', z)
@@ -661,7 +661,7 @@ if __name__ == "__main__":
         opt.train=True
 
         if opt.end2end:
-            opt.end2endtri = True
+            #opt.end2endtri = True
             opt.update_pix2pix = True
             opt.update_pix2pix_w_D2 = True
             opt.update_progan = True
