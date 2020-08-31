@@ -158,7 +158,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
                 semantics = torch.cat((x_fake_mc_up, fake_disp_f), dim=1)
                 fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, triple=True)
             else:
-                fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_image)
+                fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
             pred_fake, pred_real = self.discriminate(fake_im_f, real_image)
             G_losses['GAN_fff'] = self.opt.lambda_D2*self.pix2pix_model.criterionGAN(pred_fake, True,
                                                 for_discriminator=False)
@@ -168,7 +168,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         if self.opt.update_pix2pix:
             if not self.opt.end2endtri:
                 g_loss, fake_im_r = self.pix2pix_model.compute_generator_loss(
-                    real_semantics, real_image)
+                    real_semantics, real_disp)
             if self.opt.end2endtri:
                 semantics = torch.cat((real_semantics, real_disp), dim=1)
                 g_loss, fake_im_r = self.pix2pix_model2.compute_generator_loss(
@@ -195,21 +195,29 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
 
         with torch.no_grad():
             
-            fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, real_disp)
-            semantics = torch.cat((x_fake_mc, fake_disp_f), dim=1)
-            fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, compute_kld_loss=False, triple=True)
+            if self.opt.end2endtri:
+                fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, real_disp)
+                semantics = torch.cat((x_fake_mc, fake_disp_f), dim=1)
+                fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, compute_kld_loss=False, triple=True)
+                fake_disp_f = fake_disp_f.detach()
+                fake_disp_f.requires_grad_()
+                semantics = semantics.detach()
+                semantics.requires_grad_()
+            else:
+                fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, real_disp, compute_kld_loss=False)
+                
             fake_im_f = fake_im_f.detach()
             fake_im_f.requires_grad_()
             x_fake_mc = x_fake_mc.detach()
             x_fake_mc.requires_grad_()
-            fake_disp_f = fake_disp_f.detach()
-            fake_disp_f.requires_grad_()
-            semantics = semantics.detach()
-            semantics.requires_grad_()
-
-            semantics2 = torch.cat((real_semantics, real_disp), dim=1)
-            fake_im_r, _ = self.pix2pix_model2.generate_fake(
-                semantics2, real_image, compute_kld_loss=self.opt.use_vae, triple=True)
+            
+            if self.opt.end2endtri:
+                semantics2 = torch.cat((real_semantics, real_disp), dim=1)
+                fake_im_r, _ = self.pix2pix_model2.generate_fake(
+                    semantics2, real_image, compute_kld_loss=self.opt.use_vae, triple=True)
+            else:
+                fake_im_r, _ = self.pix2pix_model.generate_fake(
+                    real_semantics, real_disp, compute_kld_loss=self.opt.use_vae)
 
         pred_fake, pred_real = self.discriminate(fake_im_f, real_image)
         D_losses['D_Fake_fff'] = self.pix2pix_model.criterionGAN(pred_fake, False,
@@ -272,7 +280,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         if self.opt.update_pix2pix:
             if not self.opt.end2endtri:
                 d_loss = self.pix2pix_model.compute_discriminator_loss(
-                            real_semantics, real_image)
+                            real_semantics, real_disp)
             if self.opt.end2endtri:
                 semantics = torch.cat((real_semantics, real_disp), dim=1)
                 d_loss = self.pix2pix_model2.compute_discriminator_loss(
@@ -297,7 +305,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
                     semantics = semantics.detach()
                     semantics.requires_grad_()
                 else:
-                    fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, real_image, compute_kld_loss=False)
+                    fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, real_disp, compute_kld_loss=False)
                 fake_im_f = fake_im_f.detach()
                 fake_im_f.requires_grad_()
                 x_fake_mc = x_fake_mc.detach()
@@ -329,7 +337,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
                 self.pix2pix_model2.eval()
             x_fake_mc_up = upsample(x_fake_mc)
             if not self.opt.end2endtri:
-                fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_im)
+                fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
             if self.opt.end2endtri:
                 fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
                 input_semantics = torch.cat((x_fake_mc_up, fake_disp_f), dim=1)
