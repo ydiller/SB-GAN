@@ -155,11 +155,9 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
             
             if self.opt.end2endtri:
                 fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
-                print('got to here!')
                 semantics = torch.cat((x_fake_mc_up, fake_disp_f), dim=1)
                 fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, triple=True)
             else:
-                print('good')
                 fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
             pred_fake, pred_real = self.discriminate(fake_im_f, real_image)
             G_losses['GAN_fff'] = self.opt.lambda_D2*self.pix2pix_model.criterionGAN(pred_fake, True,
