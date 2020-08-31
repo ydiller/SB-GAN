@@ -335,7 +335,8 @@ class ProgressiveTrainer:
                 epoch == self.opt.epochs:
                 if not self.opt.BN_eval:
                     self.pix2pix_model.eval()
-                    self.pix2pix_model2.eval()
+                    if self.opt.end2endtri:
+                        self.pix2pix_model2.eval()
                 fid = self.compute_FID(global_iteration, z_fixed=z_fid, real_fake='fake') #real_fake='real'/fake
                 self.progressive_model.writer.add_scalar(
                         "fid_fake",
@@ -349,7 +350,8 @@ class ProgressiveTrainer:
 
                 if not self.opt.BN_eval:
                     self.pix2pix_model.train()
-                    self.pix2pix_model2.train()
+                    if self.opt.end2endtri:
+                        self.pix2pix_model2.train()
 
             iter_counter.record_epoch_start(epoch)
             for iteration in np.arange(training_steps):
@@ -406,7 +408,8 @@ class ProgressiveTrainer:
             if epoch % self.opt.save_epoch_freq == 0 or epoch == self.opt.epochs:                
                 self.progressive_model.save_model(self.num_semantics, global_iteration, phase)
                 self.pix2pix_model.save(str(int(epoch+1)+int(self.opt.which_epoch)))
-                self.pix2pix_model2.save(str(int(epoch+1)+int(self.opt.which_epoch)), triple=True)
+                if self.opt.end2endtri:
+                    self.pix2pix_model2.save(str(int(epoch+1)+int(self.opt.which_epoch)), triple=True)
                 util.save_network(self.end2end_model_on_one_gpu.netD2, 'D2', global_iteration+iteration_D2, self.opt)
 
             self.update_learning_rate(epoch)
@@ -612,7 +615,7 @@ class ProgressiveTrainer:
                         semantics = torch.cat((fake, fake_disp_f), dim=1)
                         fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_ims, compute_kld_loss=False, triple=True)
                     else:
-                        fake_im_f, _ = self.pix2pix_model.generate_fake(fake, real_ims, compute_kld_loss=False)
+                        fake_im_f, _ = self.pix2pix_model.generate_fake(fake, real_disps, compute_kld_loss=False)
                     # fake_im_f = fake_im_f[:,:,::2,::2]
                     fake_acts = get_activations(fake_im_f, self.inception_model, batchsize, cuda=True)
                 all_fakes[i*batchsize:i*batchsize+fake_acts.shape[0],:] = fake_acts
@@ -626,7 +629,7 @@ class ProgressiveTrainer:
                         semantics2 = torch.cat((real_segs_mc, real_disps), dim=1)
                         fake_im_r, _ = self.pix2pix_model2.generate_fake(semantics2, real_ims, compute_kld_loss=False, triple=True)
                     else:
-                        fake_im_r, _ = self.pix2pix_model2.generate_fake(real_segs_mc, real_ims, compute_kld_loss=False)
+                        fake_im_r, _ = self.pix2pix_model2.generate_fake(real_segs_mc, real_disps, compute_kld_loss=False)
                     # fake_im_r = fake_im_r[:,:,::2,::2]
                     fake_acts = get_activations(fake_im_r, self.inception_model, batchsize, cuda=True)
                 all_fakes[i*batchsize:i*batchsize+fake_acts.shape[0],:] = fake_acts
