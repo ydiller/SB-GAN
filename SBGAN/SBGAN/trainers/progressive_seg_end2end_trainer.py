@@ -517,6 +517,9 @@ class ProgressiveTrainer:
                 #fake_im_fig.save('/data/test_results/samples/cityscapes/%s_spade_fff_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration))
                 #fake_im_fig.close()
                 
+                save_image(semantics[j,:,:,:], '/data/test_results/samples/%s/%s_fake_cat_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
+                             nrow=1, normalize=True, range=(-1,1))
+                
                 save_image(fake[j,:,:,:], '/data/test_results/samples/%s/%s_fake_semantic_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
 
@@ -549,6 +552,9 @@ class ProgressiveTrainer:
                 
                 #save_image(seg_color[j,:,:,:], '/data/test_results/samples/cityscapes/%s_seg_real_spade_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration),
                              #nrow=1, normalize=True, range=(-1,1))
+                
+                save_image(semantics2[j,:,:,:], '/data/test_results/samples/%s/%s_real_cat_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
+                             nrow=1, normalize=True, range=(-1,1))
                 
                 save_image(seg_color[j,:,:,:], '/data/test_results/samples/%s/%s_real_semantic_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
