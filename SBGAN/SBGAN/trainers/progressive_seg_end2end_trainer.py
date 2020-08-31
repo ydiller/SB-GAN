@@ -629,7 +629,7 @@ class ProgressiveTrainer:
                         semantics2 = torch.cat((real_segs_mc, real_disps), dim=1)
                         fake_im_r, _ = self.pix2pix_model2.generate_fake(semantics2, real_ims, compute_kld_loss=False, triple=True)
                     else:
-                        fake_im_r, _ = self.pix2pix_model2.generate_fake(real_segs_mc, real_disps, compute_kld_loss=False)
+                        fake_im_r, _ = self.pix2pix_model.generate_fake(real_segs_mc, real_disps, compute_kld_loss=False)
                     # fake_im_r = fake_im_r[:,:,::2,::2]
                     fake_acts = get_activations(fake_im_r, self.inception_model, batchsize, cuda=True)
                 all_fakes[i*batchsize:i*batchsize+fake_acts.shape[0],:] = fake_acts
