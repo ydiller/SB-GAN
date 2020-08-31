@@ -493,16 +493,15 @@ class ProgressiveTrainer:
             with torch.no_grad():
                 if self.opt.end2endtri:
                     fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc, disp)
-                    print('fake disp type: ', fake_disp_f.type())
-                    print('fake semantic type: ', x_fake_mc.type())
                     semantics = torch.cat((x_fake_mc, fake_disp_f), dim=1)
-                    print('cat type: ',semantics.type())
-                    fake_im,_ = self.pix2pix_model2.generate_fake(semantics, im, triple=True)
+                    cat_fake, cat_fake_mc = self.progressive_model.inferenceSampler(semantics, scaling, self.progressive_model.num_semantics)
+                    cat_fake_ = self.progressive_model.color_transfer(cat_fake)
+                    fake_im,_ = self.pix2pix_model2.generate_fake(cat_fake, im, triple=True)
+                    fake_disp_f = fake_disp_f.cpu()
+                    fake_cat = cat_fake_.cpu()
                 else:
                     fake_im,_ = self.pix2pix_model.generate_fake(x_fake_mc, im)
             fake_im = fake_im.cpu()
-            fake_disp_f = fake_disp_f.cpu()
-            semantics = semantics.cpu()
             x_fake = x_fake.cpu()
             #im_trans = transforms.ToPILImage(mode='RGB')
             for j in range(num_bs):
@@ -520,7 +519,7 @@ class ProgressiveTrainer:
                 #fake_im_fig.save('/data/test_results/samples/cityscapes/%s_spade_fff_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration))
                 #fake_im_fig.close()
                 
-                save_image(semantics[j,:,:,:], '/data/test_results/samples/%s/%s_fake_cat_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
+                save_image(fake_cat[j,:,:,:], '/data/test_results/samples/%s/%s_fake_cat_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
                 
                 save_image(fake[j,:,:,:], '/data/test_results/samples/%s/%s_fake_semantic_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
@@ -537,6 +536,9 @@ class ProgressiveTrainer:
                 if self.opt.end2endtri:
                     semantics2 = torch.cat((seg_mc, disp), dim=1)
                     fake_im, _ = self.pix2pix_model2.generate_fake(semantics2, im, triple=True)
+                    cat_real, cat_real_mc = self.progressive_model.inferenceSampler(semantics2, scaling, self.progressive_model.num_semantics)
+                    cat_real_ = self.progressive_model.color_transfer(cat_real)
+                    real_cat = cat_real_.cpu()
                 else:
                     fake_im, _ = self.pix2pix_model.generate_fake(seg_mc, im)
             fake_im = fake_im.cpu()
@@ -556,7 +558,7 @@ class ProgressiveTrainer:
                 #save_image(seg_color[j,:,:,:], '/data/test_results/samples/cityscapes/%s_seg_real_spade_%s_%s.png'%(i*num_bs+j, self.progressive_model.dim, global_iteration),
                              #nrow=1, normalize=True, range=(-1,1))
                 
-                save_image(semantics2[j,:,:,:], '/data/test_results/samples/%s/%s_real_cat_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
+                save_image(real_cat[j,:,:,:], '/data/test_results/samples/%s/%s_real_cat_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
                              nrow=1, normalize=True, range=(-1,1))
                 
                 save_image(seg_color[j,:,:,:], '/data/test_results/samples/%s/%s_real_semantic_%s_%s.png'%(self.opt.name, i*num_bs+j, self.progressive_model.dim, global_iteration),
