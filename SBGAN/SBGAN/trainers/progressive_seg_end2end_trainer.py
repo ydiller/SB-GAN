@@ -158,7 +158,8 @@ class ProgressiveTrainer:
     def step_generator_end2end(self, iteration, global_iteration, dim_ind, seg_mc, seg, im, disp, scaling, phase):
         self.progressive_model.opt_g.zero_grad()
         self.pix2pix_model.optimizer_G.zero_grad()
-        self.pix2pix_model2.optimizer_G.zero_grad()
+        if self.opt.end2endtri:
+            self.pix2pix_model2.optimizer_G.zero_grad()
 
 
         z = torch.randn(self.opt.batchSize, 512)
@@ -205,7 +206,8 @@ class ProgressiveTrainer:
             self.progressive_model.opt_g.step()
         if self.opt.update_pix2pix or self.opt.update_pix2pix_w_D2:
             self.pix2pix_model.optimizer_G.step()
-            self.pix2pix_model2.optimizer_G.step()
+            if self.opt.end2endtri:
+                self.pix2pix_model2.optimizer_G.step()
 
         return G_losses
 
@@ -213,7 +215,8 @@ class ProgressiveTrainer:
 
         self.progressive_model.opt_d.zero_grad()
         self.pix2pix_model.optimizer_D.zero_grad()
-        self.pix2pix_model2.optimizer_D.zero_grad()
+        if self.opt.end2endtri:
+            self.pix2pix_model2.optimizer_D.zero_grad()
         self.optimizer_D2.zero_grad()
 
         z = torch.randn(self.opt.batchSize, 512)
@@ -258,7 +261,8 @@ class ProgressiveTrainer:
             self.optimizer_D2.step()
         if self.opt.update_pix2pix:
             self.pix2pix_model.optimizer_D.step()
-            self.pix2pix_model2.optimizer_D.step()
+            if self.opt.end2endtri:
+                self.pix2pix_model2.optimizer_D.step()
 
         return D_losses
 
