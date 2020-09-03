@@ -115,12 +115,12 @@ class Pix2PixModel(torch.nn.Module):
 
         if not opt.isTrain or opt.continue_train:
             if opt.end2endtri:
-                netG_1 = util.load_network(netG_1, 'G', opt.which_epoch, opt, triple)
+                netG_1 = util.load_network(netG_1, 'G', opt.which_triple_epoch, opt, triple)
             netG = util.load_network(netG, 'G', opt.which_epoch, opt)
             if opt.isTrain:# and end2end:
                 netD = util.load_network(netD, 'D', opt.which_epoch, opt)
                 if opt.end2endtri:
-                    netD_1 = util.load_network(netD_1, 'D', opt.which_epoch, opt, triple)
+                    netD_1 = util.load_network(netD_1, 'D', opt.which_triple_epoch, opt, triple)
             if opt.use_vae:
                 netE = util.load_network(netE, 'E', opt.which_epoch, opt)
         if not opt.end2endtri:
