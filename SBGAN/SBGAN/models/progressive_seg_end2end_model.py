@@ -148,16 +148,24 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         
         #fff: fake from fake
         if self.opt.update_pix2pix_w_D2 or self.opt.update_progan_w_D2:
-            if 
             upsample = nn.Upsample(scale_factor=scaling, mode='nearest')
             x_fake_mc_up = upsample(fake_semantics)
             
-            if self.opt.end2endtri:
-                fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
-                semantics = torch.cat((x_fake_mc_up, fake_disp_f), dim=1)
-                fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, triple=True)
+            if self.opt.last_blk:
+                if self.opt.end2endtri:
+                    with torch.no_grad():
+                        fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
+                        semantics = torch.cat((x_fake_mc_up, fake_disp_f), dim=1)
+                    fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, triple=True)
+                else:
+                    fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
             else:
-                fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
+                if self.opt.end2endtri:
+                    fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
+                    semantics = torch.cat((x_fake_mc_up, fake_disp_f), dim=1)
+                    fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, triple=True)
+                else:
+                    fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
             pred_fake, pred_real = self.discriminate(fake_im_f, real_image)
             G_losses['GAN_fff'] = self.opt.lambda_D2*self.pix2pix_model.criterionGAN(pred_fake, True,
                                                 for_discriminator=False)
