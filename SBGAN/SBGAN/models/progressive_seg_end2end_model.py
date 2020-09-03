@@ -335,7 +335,11 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
             fake_im_disp = torch.Tensor(x_fake.size(0), 1).cuda()
 
         with torch.no_grad():
-            fake_im_r, _ = self.pix2pix_model.generate_fake(real_semantics, real_disp)
+            if self.opt.end2endtri:
+                input_semantics = torch.cat((real_semantics, real_disp), dim=1)
+                fake_im_f, _ = self.pix2pix_model2.generate_fake(input_semantics, real_im, triple=True)
+            else:
+                fake_im_r, _ = self.pix2pix_model.generate_fake(real_semantics, real_disp)
         upsample = nn.Upsample(scale_factor=scaling, mode='nearest')
         with torch.no_grad():
             # if not self.opt.update_progan and not self.opt.update_progan_w_D2:
