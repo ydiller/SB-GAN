@@ -68,11 +68,9 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         disp = disp.cuda()
 
         if mode == 'generator_end2end':
-            print('got to end2end model')
             g_loss, fake_semantics = self.compute_end2end_generator_loss( im_mc, im, disp, z, iteration, global_iteration, dim_ind, 
                                 scaling, interpolate, hard=True)
             
-            print('finished computing G loss in end2end model')
             return g_loss, fake_semantics
         if mode == 'discriminator_end2end':
             d_loss = self.compute_end2end_discriminator_loss(im_mc, im_seg, im, disp, z ,iteration, global_iteration,dim_ind,
@@ -150,6 +148,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
         
         #fff: fake from fake
         if self.opt.update_pix2pix_w_D2 or self.opt.update_progan_w_D2:
+            if 
             upsample = nn.Upsample(scale_factor=scaling, mode='nearest')
             x_fake_mc_up = upsample(fake_semantics)
             
@@ -328,7 +327,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
             fake_im_disp = torch.Tensor(x_fake.size(0), 1).cuda()
 
         with torch.no_grad():
-            fake_im_r, _ = self.pix2pix_model.generate_fake(real_semantics, real_im)
+            fake_im_r, _ = self.pix2pix_model.generate_fake(real_semantics, real_disp)
         upsample = nn.Upsample(scale_factor=scaling, mode='nearest')
         with torch.no_grad():
             # if not self.opt.update_progan and not self.opt.update_progan_w_D2:
