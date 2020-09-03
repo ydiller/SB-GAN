@@ -69,6 +69,7 @@ fi
 CUDA_VISIBLE_DEVICES=$gpu_ids python SBGAN/trainers/progressive_seg_end2end_trainer.py --name ${name} --dataset ${dataset} \
    --dataset_mode ${dataset} --dataroot ${dataroot} --num_semantics ${num_semantics} --label_seg ${label_seg} --lr_pgan ${lr} \
   --load_size ${load_size} --crop_size ${crp_size} --checkpoints_dir ${ckpt}  --nums_fid ${nums_fid} \
-  --batchSize ${bs} --which_iter_D2 ${D2_iter} --which_epoch ${spade_epoch}  --which_iter ${pro_iter}  --lambda_pgan ${lambda}\
+  --batchSize ${bs} --which_iter_D2 ${D2_iter} --which_epoch ${spade_epoch} --which_iter ${pro_iter}  --lambda_pgan ${lambda}\
   --niter ${niter} --niter_decay ${niterd} --eval_freq ${eval_freq} --save_epoch_freq ${save_freq} \
-  --tf_log --end2end --pretrain_D2 --continue_train --cont_train --no_instance --contain_dontcare_label --end2endtri --last_blk
+  --tf_log --end2end --pretrain_D2 --continue_train --cont_train --no_instance --contain_dontcare_label --end2endtri --last_blk\
+  --which_triple_epoch ${spade_triple_epoch}
