@@ -407,12 +407,17 @@ class ProgressiveTrainer:
                         f"Res {self.progressive_model.generator.res:03d}, {phase.rjust(9)}: Iteration {iteration + 1:05d}/{training_steps:05d}, epoch:{epoch + 1:05d}/{self.opt.epochs:05d}"
                     )
 
-            if epoch % self.opt.save_epoch_freq == 0 or epoch == self.opt.epochs:                
-                self.progressive_model.save_model(self.num_semantics, global_iteration, phase)
-                self.pix2pix_model.save(str(int(epoch+1)+int(self.opt.which_epoch)))
-                if self.opt.end2endtri:
-                    self.pix2pix_model2.save(str(int(epoch+1)+int(self.opt.which_epoch)), triple=True)
-                util.save_network(self.end2end_model_on_one_gpu.netD2, 'D2', global_iteration+iteration_D2, self.opt)
+            if epoch % self.opt.save_epoch_freq == 0 or epoch == self.opt.epochs:
+                if not self.opt.last_blk:
+                    self.progressive_model.save_model(self.num_semantics, global_iteration, phase)
+                    self.pix2pix_model.save(str(int(epoch+1)+int(self.opt.which_epoch)))
+                    if self.opt.end2endtri:
+                        self.pix2pix_model2.save(str(int(epoch+1)+int(self.opt.which_epoch)), triple=True)
+                    util.save_network(self.end2end_model_on_one_gpu.netD2, 'D2', global_iteration+iteration_D2, self.opt)
+                else:
+                    if self.opt.end2endtri:
+                        self.pix2pix_model2.save(str(int(epoch+1)+int(self.opt.which_epoch)), triple=True)
+                    util.save_network(self.end2end_model_on_one_gpu.netD2, 'D2', global_iteration+iteration_D2, self.opt)
 
             self.update_learning_rate(epoch)
             iter_counter.record_epoch_end()
