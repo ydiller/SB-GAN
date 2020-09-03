@@ -59,9 +59,9 @@ fi
 
 spade_pretrained2="${ckpt}/SPADE/weights/${name_joint}"
 #spade_pretrained="../SPADE/${ckpt}/${name_joint}"
-if [ ! -f "${ckpt}/${name}/${spade_epoch}_net_G_triple.pth" ]; then
-    cp "${spade_pretrained2}/${spade_epoch}_net_G_triple.pth" "${ckpt}/${name}/"
-    cp "${spade_pretrained2}/${spade_epoch}_net_D_triple.pth" "${ckpt}/${name}/"
+if [ ! -f "${ckpt}/${name}/${spade_triple_epoch}_net_G_triple.pth" ]; then
+    cp "${spade_pretrained2}/${spade_triple_epoch}_net_G_triple.pth" "${ckpt}/${name}/"
+    cp "${spade_pretrained2}/${spade_triple_epoch}_net_D_triple.pth" "${ckpt}/${name}/"
 fi
 
 
