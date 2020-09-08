@@ -138,24 +138,26 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
     def compute_end2end_generator_loss(self, real_semantics, real_image, real_disp, z, iteration, global_iteration, dim_ind, 
                                 scaling, interpolate=False, hard=True):
         G_losses = {}
-
+        print('1')
         #fake seg
         g_loss_fake, fake_semantics = self.compute_generator_loss(iteration, global_iteration, dim_ind,scaling, 
                                 interpolate, z=z, hard=hard)
         if self.opt.update_progan:
             G_losses['GAN_pro'] = g_loss_fake * self.opt.lambda_pgan
 
-        
+                    
         #fff: fake from fake
         if self.opt.update_pix2pix_w_D2 or self.opt.update_progan_w_D2:
             upsample = nn.Upsample(scale_factor=scaling, mode='nearest')
             x_fake_mc_up = upsample(fake_semantics)
-            
+            print('2')
             if self.opt.last_blk:
                 if self.opt.end2endtri:
                     with torch.no_grad():
+                        print('3')
                         fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
                         semantics = torch.cat((x_fake_mc_up, fake_disp_f), dim=1)
+                        print('4')
                     fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, triple=True)
                 else:
                     fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
