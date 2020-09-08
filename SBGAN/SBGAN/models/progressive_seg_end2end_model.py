@@ -154,8 +154,11 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
             if self.opt.last_blk:
                 if self.opt.end2endtri:
                     with torch.no_grad():
+                        print('start no grad')
                         fake_disp_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
+                        print('end pix2pix')
                         semantics = torch.cat((x_fake_mc_up, fake_disp_f), dim=1)
+                        print('end semantic')
                     fake_im_f, _ = self.pix2pix_model2.generate_fake(semantics, real_image, triple=True)
                 else:
                     fake_im_f, _ = self.pix2pix_model.generate_fake(x_fake_mc_up, real_disp)
