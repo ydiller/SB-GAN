@@ -138,7 +138,7 @@ class ProgressiveSegEnd2EndModel(torch.nn.Module):
     def compute_end2end_generator_loss(self, real_semantics, real_image, real_disp, z, iteration, global_iteration, dim_ind, 
                                 scaling, interpolate=False, hard=True):
         G_losses = {}
-
+        print('1')
         #fake seg
         g_loss_fake, fake_semantics = self.compute_generator_loss(iteration, global_iteration, dim_ind,scaling, 
                                 interpolate, z=z, hard=hard)
